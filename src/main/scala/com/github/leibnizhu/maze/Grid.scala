@@ -5,7 +5,7 @@ import scalafx.scene.paint.Color
 
 import scala.util.Random
 
-class Grid(rows: Int, columns: Int) {
+class Grid(val rows: Int, val columns: Int) {
 
   private val _grid: Array[Array[Cell]] = initGrid()
 
@@ -107,8 +107,8 @@ class Grid(rows: Int, columns: Int) {
           val safeCell = Option(cell).getOrElse(new Cell(-1, -1))
           val intensity = (maxDist - distances.distance(safeCell).getOrElse(0).toDouble) / maxDist
           val dark = (255 * intensity).toInt
-          val bright = 128 + (127 * intensity).toInt
-          gc.setFill(Color.rgb(dark, bright, bright))
+          val bright = 160 + (95 * intensity).toInt
+          gc.setFill(Color.rgb(dark, bright, dark))
           gc.fillRect(columnIndex * cellSize, rowIndex * cellSize, cellSize, cellSize)
         }
       case None =>

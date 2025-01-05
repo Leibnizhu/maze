@@ -2,7 +2,7 @@ package com.github.leibnizhu.maze
 
 import scala.util.Random
 
-class Cell(row: Int, column: Int) {
+class Cell(val row: Int, val column: Int) {
   var north: Option[Cell] = None
   var south: Option[Cell] = None
   var east: Option[Cell] = None
