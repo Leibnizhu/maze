@@ -99,9 +99,23 @@ class Grid(rows: Int, columns: Int) {
   }
 
   def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None): Unit = {
+    // 按距离染色
+    distances match {
+      case Some(distances) =>
+        val maxDist = distances.max()._2
+        eachCell() { (rowIndex, columnIndex, cell) =>
+          val safeCell = Option(cell).getOrElse(new Cell(-1, -1))
+          val intensity = (maxDist - distances.distance(safeCell).getOrElse(0).toDouble) / maxDist
+          val dark = (255 * intensity).toInt
+          val bright = 128 + (127 * intensity).toInt
+          gc.setFill(Color.rgb(dark, bright, bright))
+          gc.fillRect(columnIndex * cellSize, rowIndex * cellSize, cellSize, cellSize)
+        }
+      case None =>
+    }
     gc.stroke = Color.Black
-    gc.lineWidth = 2
     // 最顶上的边界
+    gc.setLineWidth(2)
     gc.strokeLine(0, 0, columns * cellSize, 0)
     eachRow() { (rowIndex, row) =>
       // 每一行先打印格子，然后是下边界；这两部分最左边是固定的
@@ -110,6 +124,14 @@ class Grid(rows: Int, columns: Int) {
       for ((cell, columnIndex) <- row.zipWithIndex) {
         val (leftX, rightX) = (columnIndex * cellSize, (columnIndex + 1) * cellSize)
         val safeCell = Option(cell).getOrElse(new Cell(-1, -1))
+        distances match {
+          case Some(distances) =>
+            gc.setFill(Color.Black)
+            // 文字居中，需要优化，按一个字5*5来计算，不一定准确
+            val distStr = distances.distance(safeCell).map(_.toString).getOrElse("")
+            gc.fillText(distStr, leftX + cellSize / 2 - distStr.length * 5, topY + cellSize / 2 + 5)
+          case None =>
+        }
         // 每个格子如果没有连着东边，则画东边墙壁
         if (!safeCell.linked(safeCell.east)) {
           gc.strokeLine(rightX, topY, rightX, bottomY)
@@ -118,9 +140,6 @@ class Grid(rows: Int, columns: Int) {
         if (!safeCell.linked(safeCell.south)) {
           gc.strokeLine(leftX, bottomY, rightX, bottomY)
         }
-        val distStr = distances.flatMap(_.distance(cell)).map(_.toString).getOrElse("")
-        // 文字居中，需要优化，按一个字5*5来计算，不一定准确
-        gc.fillText(distStr, leftX + cellSize / 2 - distStr.length * 5, topY + cellSize / 2 + 5)
       }
     }
   }

@@ -1,5 +1,7 @@
 package com.github.leibnizhu.maze
 
+import scala.util.Random
+
 class Cell(row: Int, column: Int) {
   var north: Option[Cell] = None
   var south: Option[Cell] = None
@@ -49,6 +51,11 @@ class Cell(row: Int, column: Int) {
     * @return 相邻的单元格列表
     */
   def neighbors(): List[Cell] = List(north, south, east, west).flatten
+
+  def randomNeighbor():Cell = {
+    val neighborList = neighbors()
+    neighborList(Random.nextInt(neighborList.length))
+  }
 
   def distances(): Distances = Distances(this).distances()
 }
