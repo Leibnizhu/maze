@@ -66,7 +66,7 @@ object App extends JFXApp3 {
             }
           }
           top = new FlowPane() {
-            private val algorithmSelector = new ComboBox(List("Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法"))
+            private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法"))
             algorithmSelector.getSelectionModel.selectFirst()
             private val genMazeButton = new Button("随机生成迷宫") {
               onAction = _ => {
@@ -79,12 +79,14 @@ object App extends JFXApp3 {
                   case "Sidewinder算法" => Sidewinder.on(grid)
                   case "Aldous-Border算法" => AldousBorder.on(grid)
                   case "Wilson算法" => Wilson.on(grid)
-                  case _ => println("未知的算法选择")
+                  case "猎杀算法" => HuntAndKill.on(grid)
+                  case "递归回溯算法" => RecursiveBacktracker.on(grid)
+                  case _ => println("未支持的算法")
                 }
                 // 将迷宫绘制到画布上
                 val gc: GraphicsContext = centerCanvas.graphicsContext2D
                 gc.clearRect(0, 0, canvasWidth, canvasHeight)
-                val middle = grid.cell(rows/2, columns/2)
+                val middle = grid.cell(rows / 2, columns / 2)
                 grid.paintCanvas(gc, cellSize, Some(middle.distances()))
                 canvasClick = 0
                 curDist = null
