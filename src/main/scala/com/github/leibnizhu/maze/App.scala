@@ -1,5 +1,6 @@
 package com.github.leibnizhu.maze
 
+import com.github.leibnizhu.maze.generate.{AldousBorder, BinaryTree, HuntAndKill, RecursiveBacktracker, Sidewinder, Wilson}
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.canvas.{Canvas, GraphicsContext}

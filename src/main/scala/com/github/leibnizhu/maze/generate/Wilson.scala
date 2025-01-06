@@ -1,4 +1,6 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.generate
+
+import com.github.leibnizhu.maze.Grid
 
 import scala.util.Random
 
