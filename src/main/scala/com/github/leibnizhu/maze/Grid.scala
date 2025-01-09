@@ -2,6 +2,7 @@ package com.github.leibnizhu.maze
 
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
+import scalafx.scene.text.{Font, Text}
 
 import scala.util.Random
 
@@ -12,30 +13,40 @@ class Grid(val rows: Int, val columns: Int) {
   private def initGrid(): Array[Array[Cell]] = {
     val grid = Array.ofDim[Cell](rows, columns)
     // 初始化所有单元格
+    initializeCells(grid)
+    // 链接单元格
+    linkCells(grid)
+    grid
+  }
+
+  protected def initializeCells(grid: Array[Array[Cell]]): Unit = {
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         grid(row)(column) = new Cell(row, column)
       }
     }
-    // 链接单元格
+  }
+
+  private def linkCells(grid: Array[Array[Cell]]): Unit = {
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         val cell = grid(row)(column)
-        if (row > 0) {
-          cell.north = Some(grid(row - 1)(column))
-        }
-        if (row < rows - 1) {
-          cell.south = Some(grid(row + 1)(column))
-        }
-        if (column > 0) {
-          cell.west = Some(grid(row)(column - 1))
-        }
-        if (column < columns - 1) {
-          cell.east = Some(grid(row)(column + 1))
+        if (cell != null) {
+          if (row > 0) {
+            cell.north = Option(grid(row - 1)(column))
+          }
+          if (row < rows - 1) {
+            cell.south = Option(grid(row + 1)(column))
+          }
+          if (column > 0) {
+            cell.west = Option(grid(row)(column - 1))
+          }
+          if (column < columns - 1) {
+            cell.east = Option(grid(row)(column + 1))
+          }
         }
       }
     }
-    grid
   }
 
   def randomCell(): Cell = {
@@ -52,6 +63,8 @@ class Grid(val rows: Int, val columns: Int) {
       null
 
   def size(): Int = rows * columns
+
+  def centerCell(): Cell = cell(rows / 2, columns / 2)
 
   /** 遍历所有行
    *
@@ -104,41 +117,53 @@ class Grid(val rows: Int, val columns: Int) {
       case Some(distances) =>
         val maxDist = distances.max()._2
         eachCell() { (rowIndex, columnIndex, cell) =>
-          val safeCell = Option(cell).getOrElse(new Cell(-1, -1))
-          val intensity = (maxDist - distances.distance(safeCell).getOrElse(0).toDouble) / maxDist
-          val dark = (255 * intensity).toInt
-          val bright = 160 + (95 * intensity).toInt
-          gc.setFill(Color.rgb(dark, bright, dark))
-          gc.fillRect(columnIndex * cellSize, rowIndex * cellSize, cellSize, cellSize)
+          // 如果为空，则是遮罩里面的，无需渲染
+          if (cell != null) {
+            val intensity = (maxDist - distances.distance(cell).getOrElse(0).toDouble) / maxDist
+            val dark = (255 * intensity).toInt
+            val bright = 160 + (95 * intensity).toInt
+            gc.setFill(Color.rgb(dark, bright, dark))
+            gc.fillRect(columnIndex * cellSize, rowIndex * cellSize, cellSize, cellSize)
+          }
         }
       case None =>
     }
-    gc.stroke = Color.Black
-    // 最顶上的边界
-    gc.setLineWidth(2)
-    gc.strokeLine(0, 0, columns * cellSize, 0)
-    eachRow() { (rowIndex, row) =>
-      // 每一行先打印格子，然后是下边界；这两部分最左边是固定的
-      val (topY, bottomY) = (rowIndex * cellSize, (rowIndex + 1) * cellSize)
-      gc.strokeLine(0, topY, 0, bottomY)
-      for ((cell, columnIndex) <- row.zipWithIndex) {
+    eachCell() { (rowIndex, columnIndex, cell) =>
+      if (cell != null) {
+        val (topY, bottomY) = (rowIndex * cellSize, (rowIndex + 1) * cellSize)
         val (leftX, rightX) = (columnIndex * cellSize, (columnIndex + 1) * cellSize)
-        val safeCell = Option(cell).getOrElse(new Cell(-1, -1))
+        // 距离显示
         distances match {
           case Some(distances) =>
-            gc.setFill(Color.Black)
             // 文字居中，需要优化，按一个字5*5来计算，不一定准确
-            val distStr = distances.distance(safeCell).map(_.toString).getOrElse("")
-            gc.fillText(distStr, leftX + cellSize / 2 - distStr.length * 5, topY + cellSize / 2 + 5)
+            val distStr = distances.distance(cell).map(_.toString).getOrElse("")
+            val font = new Font("System Regular", cellSize / 2)
+            gc.setFill(Color.Black)
+            gc.setFont(font)
+            val textNode = new Text(distStr)
+            textNode.setFont(font)
+            val textWidth = textNode.getLayoutBounds.getWidth
+            val textHeight = textNode.getLayoutBounds.getHeight
+            gc.fillText(distStr, leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
           case None =>
         }
-        // 每个格子如果没有连着东边，则画东边墙壁
-        if (!safeCell.linked(safeCell.east)) {
+        gc.stroke = Color.Black
+        gc.setLineWidth(2)
+        // 每个格子如果没有连着东边，则画东边界
+        if (!cell.linked(cell.east)) {
           gc.strokeLine(rightX, topY, rightX, bottomY)
         }
+        // 如果格子没有连着西边，则画西边界
+        if (!cell.linked(cell.west)) {
+          gc.strokeLine(leftX, topY, leftX, bottomY)
+        }
         // 每个格子如果没有连着南边，则画下边界
-        if (!safeCell.linked(safeCell.south)) {
+        if (!cell.linked(cell.south)) {
           gc.strokeLine(leftX, bottomY, rightX, bottomY)
+        }
+        // 如果格子没有连着北边，则画上边界
+        if (!cell.linked(cell.north)) {
+          gc.strokeLine(leftX, topY, rightX, topY)
         }
       }
     }

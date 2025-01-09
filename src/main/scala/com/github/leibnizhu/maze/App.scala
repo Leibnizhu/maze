@@ -1,36 +1,49 @@
 package com.github.leibnizhu.maze
 
-import com.github.leibnizhu.maze.generate.{AldousBorder, BinaryTree, HuntAndKill, RecursiveBacktracker, Sidewinder, Wilson}
+import com.github.leibnizhu.maze.generate.*
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.canvas.{Canvas, GraphicsContext}
 import scalafx.scene.control.{Button, ComboBox, TextField}
 import scalafx.scene.layout.{BorderPane, FlowPane}
+import scalafx.stage.FileChooser
+import scalafx.stage.FileChooser.ExtensionFilter
 
+import java.io.File
 import scala.util.Try
 
 object App extends JFXApp3 {
+  private val MAX_CELL_SIZE = 30
+  private val MIN_CELL_SIZE = 10
+  private val CANVAS_WIDTH = 800
+  private val CANVAS_HEIGHT = 600
+  private val DEFAULT_ROW_NUM = 10
+  private val DEFAULT_COLUMN_NUM = 10
 
   override def start(): Unit = {
     stage = new JFXApp3.PrimaryStage {
       title = "迷宫"
-      scene = new Scene(800, 450) {
+      scene = new Scene(CANVAS_WIDTH, CANVAS_HEIGHT + 50) {
         root = new BorderPane() {
           private var grid: Grid = _
+          private var mask: Mask = _
           private var curDist: Distances = _
-          private val cellSize = 30
-          private val canvasWidth = 800
-          private val canvasHeight = 600
+          private var cellSize = MAX_CELL_SIZE
+          private val canvasWidth = CANVAS_WIDTH
+          private val canvasHeight = CANVAS_HEIGHT
           private var canvasClick = 0
           private val rowNumInput: TextField = new TextField {
             promptText = "迷宫行数"
+            prefWidth = 75
           }
           private val columnNumInput: TextField = new TextField {
             promptText = "迷宫列数"
+            prefWidth = 75
           }
 
           private def getRowColumn: (Int, Int) = {
-            (Try(rowNumInput.text.value.toInt).getOrElse(10), Try(columnNumInput.text.value.toInt).getOrElse(10))
+            (Try(rowNumInput.text.value.toInt).getOrElse(DEFAULT_ROW_NUM),
+              Try(columnNumInput.text.value.toInt).getOrElse(DEFAULT_COLUMN_NUM))
           }
 
           private val centerCanvas = new Canvas(canvasWidth, canvasHeight) {
@@ -72,8 +85,15 @@ object App extends JFXApp3 {
             private val genMazeButton = new Button("随机生成迷宫") {
               onAction = _ => {
                 // 生成Binary Tree迷宫
-                val (rows, columns) = getRowColumn
-                grid = new Grid(rows, columns)
+                val (rows, columns) = if (mask == null) {
+                  val shape = getRowColumn
+                  grid = new Grid(shape._1, shape._2)
+                  shape
+                } else {
+                  grid = new MaskedGrid(mask)
+                  (mask.rows, mask.columns)
+                }
+                cellSize = calCellSize(centerCanvas.getHeight.toInt, centerCanvas.getWidth.toInt, rows, columns)
                 val algorithm = algorithmSelector.value.value
                 algorithm match {
                   case "二叉树算法" => BinaryTree.on(grid)
@@ -87,8 +107,8 @@ object App extends JFXApp3 {
                 // 将迷宫绘制到画布上
                 val gc: GraphicsContext = centerCanvas.graphicsContext2D
                 gc.clearRect(0, 0, canvasWidth, canvasHeight)
-                val middle = grid.cell(rows / 2, columns / 2)
-                grid.paintCanvas(gc, cellSize, Some(middle.distances()))
+                val middle = grid.centerCell()
+                grid.paintCanvas(gc, cellSize, Option(middle).map(_.distances()))
                 canvasClick = 0
                 curDist = null
               }
@@ -96,7 +116,7 @@ object App extends JFXApp3 {
             private val longestPath = new Button("最长路径") {
               onAction = _ => {
                 if (grid != null) {
-                  val start = grid.cell(0, 0)
+                  val start = grid.randomCell()
                   val distances = start.distances()
                   val (newStart, maxDist) = distances.max()
                   val newDistances = newStart.distances()
@@ -110,10 +130,30 @@ object App extends JFXApp3 {
                 }
               }
             }
+            private val maskButton = new Button("选择遮罩") {
+              onAction = _ => {
+                val fileChooser = new FileChooser() {
+                  title = "选择遮罩文件"
+                  initialDirectory = new File(System.getProperty("user.home"))
+                  extensionFilters.addAll(new FileChooser.ExtensionFilter("PNG Files", "*.png"))
+                }
+                val maskFile = fileChooser.showOpenDialog(stage)
+                mask = Mask(maskFile)
+                rowNumInput.setText(mask.rows.toString)
+                columnNumInput.setText(mask.columns.toString)
+              }
+            }
+            private val cleanMaskButton = new Button("清除遮罩") {
+              onAction = _ => {
+                mask = null
+              }
+            }
             hgap = 10
             children = List(
               rowNumInput,
               columnNumInput,
+              maskButton,
+              cleanMaskButton,
               algorithmSelector,
               genMazeButton,
               longestPath
@@ -125,4 +165,9 @@ object App extends JFXApp3 {
     }
   }
 
+  private def calCellSize(height: Int, width: Int, rows: Int, columns: Int): Int = {
+    val cellSize = Math.min(height / rows, width / columns).toInt
+    Math.min(Math.max(MIN_CELL_SIZE, cellSize), MAX_CELL_SIZE)
+  }
 }
+
