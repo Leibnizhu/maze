@@ -25,7 +25,7 @@ object HuntAndKill {
       } else {
         // 邻居都访问过了，进入猎杀模式，首先curCell置空为了有机会退出循环
         curCell = null
-        grid.eachCell() { (rowIndex, columnIndex, cell) =>
+        grid.eachCell() { cell =>
           val visitedNeighbors = cell.neighbors().filter(c => c.links().nonEmpty)
           val cellIsUnvisited = cell.links().isEmpty
           if (cellIsUnvisited && visitedNeighbors.nonEmpty) {

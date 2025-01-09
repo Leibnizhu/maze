@@ -15,7 +15,7 @@ object BinaryTree {
    * @return 构建后的迷宫
    */
   def on(grid: Grid): Grid = {
-    grid.eachCell() { (_, _, cell) =>
+    grid.eachCell() {  cell =>
       // 每个单元格，选择其北或东的邻居出来，随机选择一个，进行链接
       val neighbors = List(cell.east, cell.north).flatten
       if (neighbors.nonEmpty) {

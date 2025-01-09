@@ -4,7 +4,8 @@ import scala.util.Random
 
 class MaskedGrid(mask: Mask) extends Grid(mask.rows, mask.columns) {
 
-  override def initializeCells(grid: Array[Array[Cell]]): Unit = {
+  override def initializeCells(): Array[Array[Cell]] = {
+    val grid = Array.ofDim[Cell](rows, columns)
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         if (mask.isEnabled(row, column)) {
@@ -12,6 +13,7 @@ class MaskedGrid(mask: Mask) extends Grid(mask.rows, mask.columns) {
         }
       }
     }
+    grid
   }
 
   override def randomCell(): Cell = {

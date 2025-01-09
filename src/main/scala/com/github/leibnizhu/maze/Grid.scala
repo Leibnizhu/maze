@@ -8,26 +8,27 @@ import scala.util.Random
 
 class Grid(val rows: Int, val columns: Int) {
 
-  private val _grid: Array[Array[Cell]] = initGrid()
+  protected val _grid: Array[Array[Cell]] = initGrid()
 
   private def initGrid(): Array[Array[Cell]] = {
-    val grid = Array.ofDim[Cell](rows, columns)
     // 初始化所有单元格
-    initializeCells(grid)
+    val grid = initializeCells()
     // 链接单元格
     linkCells(grid)
     grid
   }
 
-  protected def initializeCells(grid: Array[Array[Cell]]): Unit = {
+  protected def initializeCells(): Array[Array[Cell]] = {
+    val grid = Array.ofDim[Cell](rows, columns)
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         grid(row)(column) = new Cell(row, column)
       }
     }
+    grid
   }
 
-  private def linkCells(grid: Array[Array[Cell]]): Unit = {
+  protected def linkCells(grid: Array[Array[Cell]]): Unit = {
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         val cell = grid(row)(column)
@@ -56,9 +57,9 @@ class Grid(val rows: Int, val columns: Int) {
     _grid(row)(column)
   }
 
-  def cell(row: Int, column: Int): Cell =
+  def cell(row: Int, column: Int, grid: Array[Array[Cell]] = _grid): Cell =
     if (row >= 0 && row < rows && column >= 0 && column < columns)
-      _grid(row)(column)
+      grid(row)(column)
     else
       null
 
@@ -82,10 +83,10 @@ class Grid(val rows: Int, val columns: Int) {
    * @param f
    * 对每一个单元格执行的函数
    */
-  def eachCell()(f: (Int, Int, Cell) => Unit): Unit = {
-    for ((row, rowIndex) <- _grid.zipWithIndex) {
-      for ((cell, columnIndex) <- row.zipWithIndex) {
-        f(rowIndex, columnIndex, cell)
+  def eachCell(grid: Array[Array[Cell]] = _grid)(f: Cell => Unit): Unit = {
+    for (row <- grid) {
+      for (cell <- row) {
+        f(cell)
       }
     }
   }
@@ -116,22 +117,24 @@ class Grid(val rows: Int, val columns: Int) {
     distances match {
       case Some(distances) =>
         val maxDist = distances.max()._2
-        eachCell() { (rowIndex, columnIndex, cell) =>
+        eachCell() { cell =>
           // 如果为空，则是遮罩里面的，无需渲染
           if (cell != null) {
+            val (row, column) = (cell.row, cell.column)
             val intensity = (maxDist - distances.distance(cell).getOrElse(0).toDouble) / maxDist
             val dark = (255 * intensity).toInt
             val bright = 160 + (95 * intensity).toInt
             gc.setFill(Color.rgb(dark, bright, dark))
-            gc.fillRect(columnIndex * cellSize, rowIndex * cellSize, cellSize, cellSize)
+            gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
           }
         }
       case None =>
     }
-    eachCell() { (rowIndex, columnIndex, cell) =>
+    eachCell() { cell =>
       if (cell != null) {
-        val (topY, bottomY) = (rowIndex * cellSize, (rowIndex + 1) * cellSize)
-        val (leftX, rightX) = (columnIndex * cellSize, (columnIndex + 1) * cellSize)
+        val (row, column) = (cell.row, cell.column)
+        val (topY, bottomY) = (row * cellSize, (row + 1) * cellSize)
+        val (leftX, rightX) = (column * cellSize, (column + 1) * cellSize)
         // 距离显示
         distances match {
           case Some(distances) =>

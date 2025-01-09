@@ -80,20 +80,51 @@ object App extends JFXApp3 {
             }
           }
           top = new FlowPane() {
-            private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法"))
-            algorithmSelector.getSelectionModel.selectFirst()
+            private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
+              this.getSelectionModel.selectFirst()
+            }
+            private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形")) {
+              this.getSelectionModel.selectFirst()
+
+              onAction = _ => {
+                if ("方形遮罩" == this.value.value) {
+                  val fileChooser = new FileChooser() {
+                    title = "选择遮罩文件"
+                    initialDirectory = new File(System.getProperty("user.home"))
+                    extensionFilters.addAll(new FileChooser.ExtensionFilter("PNG Files", "*.png"))
+                  }
+                  val maskFile = fileChooser.showOpenDialog(stage)
+                  if (maskFile != null) {
+                    mask = Mask(maskFile)
+                    rowNumInput.setText(mask.rows.toString)
+                    columnNumInput.setText(mask.columns.toString)
+                  }
+                }
+              }
+            }
             private val genMazeButton = new Button("随机生成迷宫") {
               onAction = _ => {
                 // 生成Binary Tree迷宫
-                val (rows, columns) = if (mask == null) {
-                  val shape = getRowColumn
-                  grid = new Grid(shape._1, shape._2)
-                  shape
-                } else {
-                  grid = new MaskedGrid(mask)
-                  (mask.rows, mask.columns)
+                val (rows, columns) = shapeSelector.value.value match {
+                  case "方形" =>
+                    val shape = getRowColumn
+                    grid = new Grid(shape._1, shape._2)
+                    shape
+                  case "方形遮罩" =>
+                    grid = new MaskedGrid(mask)
+                    (mask.rows, mask.columns)
+                  case "圆形" =>
+                    val shape = getRowColumn
+                    grid = new PolarGrid(shape._1)
+                    shape
                 }
-                cellSize = calCellSize(centerCanvas.getHeight.toInt, centerCanvas.getWidth.toInt, rows, columns)
+                cellSize = shapeSelector.value.value match {
+                  case "方形" | "方形遮罩" =>
+                    calCellSize(centerCanvas.getHeight.toInt, centerCanvas.getWidth.toInt, rows, columns)
+                  case "圆形" =>
+                    val size = Math.min(centerCanvas.getHeight, centerCanvas.getWidth).toInt / 2 / rows
+                    Math.min(Math.max(MIN_CELL_SIZE, size), MAX_CELL_SIZE)
+                }
                 val algorithm = algorithmSelector.value.value
                 algorithm match {
                   case "二叉树算法" => BinaryTree.on(grid)
@@ -130,30 +161,20 @@ object App extends JFXApp3 {
                 }
               }
             }
-            private val maskButton = new Button("选择遮罩") {
+            /*private val maskButton = new Button("选择遮罩") {
               onAction = _ => {
-                val fileChooser = new FileChooser() {
-                  title = "选择遮罩文件"
-                  initialDirectory = new File(System.getProperty("user.home"))
-                  extensionFilters.addAll(new FileChooser.ExtensionFilter("PNG Files", "*.png"))
-                }
-                val maskFile = fileChooser.showOpenDialog(stage)
-                mask = Mask(maskFile)
-                rowNumInput.setText(mask.rows.toString)
-                columnNumInput.setText(mask.columns.toString)
               }
             }
             private val cleanMaskButton = new Button("清除遮罩") {
               onAction = _ => {
                 mask = null
               }
-            }
+            }*/
             hgap = 10
             children = List(
               rowNumInput,
               columnNumInput,
-              maskButton,
-              cleanMaskButton,
+              shapeSelector,
               algorithmSelector,
               genMazeButton,
               longestPath
