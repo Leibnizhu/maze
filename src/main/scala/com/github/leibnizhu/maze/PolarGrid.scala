@@ -2,7 +2,7 @@ package com.github.leibnizhu.maze
 
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
-import scalafx.scene.shape.ArcType
+import scalafx.scene.text.{Font, Text}
 
 import scala.util.Random
 
@@ -63,51 +63,98 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
 
   override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances]): Unit = {
     // 整体直径和中心位置（x,y都是一个值）
+    val font = new Font("System Regular", cellSize / 2)
     val imgSize = 2 * rows * cellSize
     val center = imgSize / 2
     // 按距离染色
     distances match {
       case Some(distances) =>
         val maxDist = distances.max()._2
-      // TODO
+        eachCell() {
+          case curCell: PolarCell =>
+            val (row, column) = (curCell.row, curCell.column)
+            val intensity = (maxDist - distances.distance(curCell).getOrElse(0).toDouble) / maxDist
+            val dark = (255 * intensity).toInt
+            val bright = 160 + (95 * intensity).toInt
+            val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
+            gc.setFill(Color.rgb(dark, bright, dark))
+            //            gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
+            gc.fillPolygon(List((ax, ay), (bx, by), (dx, dy), (cx, cy)))
+        }
       case None =>
     }
     eachCell() {
       case curCell: PolarCell =>
         // 中间不用处理
-        if (curCell.row != 0) {
+        if (curCell.row == 0) {
+          distances match {
+            case Some(distances) =>
+              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+              gc.setFill(Color.Black)
+              gc.setFont(font)
+              val textNode = new Text(distStr)
+              textNode.setFont(font)
+              val textWidth = textNode.getLayoutBounds.getWidth
+              val textHeight = textNode.getLayoutBounds.getHeight
+              gc.fillText(distStr, center - textWidth / 2, center + textHeight / 4)
+            case None =>
+          }
+        } else {
           val (row, column) = (curCell.row, curCell.column)
-          // 每个格子的夹角、内径、外径、顺时针逆时针的边的角度
-          val theta = 2 * Math.PI / _grid(row).length
-          val innerRadius = curCell.row * cellSize
-          val outerRadius = (curCell.row + 1) * cellSize
-          val ccwTheta = curCell.column * theta
-          val cwTheta = (curCell.column + 1) * theta
-          // 格子四个顶点的座标
-          val ax = center + (innerRadius * Math.cos(ccwTheta))
-          val ay = center + (innerRadius * Math.sin(ccwTheta))
-          val bx = center + (outerRadius * Math.cos(ccwTheta))
-          val by = center + (outerRadius * Math.sin(ccwTheta))
-          val cx = center + (innerRadius * Math.cos(cwTheta))
-          val cy = center + (innerRadius * Math.sin(cwTheta))
-          val dx = center + (outerRadius * Math.cos(cwTheta))
-          val dy = center + (outerRadius * Math.sin(cwTheta))
-          // TODO 距离的文字
+          val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
+          // 距离显示
+          distances match {
+            case Some(distances) =>
+              // 文字居中
+              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+              gc.setFill(Color.Black)
+              gc.setFont(font)
+              val textNode = new Text(distStr)
+              textNode.setFont(font)
+              val textWidth = textNode.getLayoutBounds.getWidth
+              val textHeight = textNode.getLayoutBounds.getHeight
+              val maxX = Array(ax, bx, cx, dx).max
+              val minX = Array(ax, bx, cx, dx).min
+              val maxY = Array(ay, by, cy, dy).max
+              val minY = Array(ay, by, cy, dy).min
+              gc.fillText(distStr, (minX + maxX) / 2 - textWidth / 2, (minY + maxY) / 2 + textHeight / 4)
+            case None =>
+          }
           gc.stroke = Color.Black
           gc.setLineWidth(2)
           // 由于是圆环，每个格子画向内（圆心）一格和顺时针方向的邻居边即可
-          if (curCell.linked(curCell.inward)) {
+          if (!curCell.linked(curCell.inward)) {
+            // FIXME 画圆弧
             gc.strokeLine(ax, ay, cx, cy)
-            //            gc.strokeArc(Math.min(ax,cx), Math.min(ay,cy), Math.abs(ax - cx), Math.abs(ay - cy), ccwTheta * 180 / Math.PI, theta * 180 / Math.PI, ArcType.Open)
           }
-          if (curCell.linked(curCell.cw)) {
+          if (!curCell.linked(curCell.cw)) {
             gc.strokeLine(cx, cy, dx, dy)
           }
           // 最外层，画底边
           if (row == rows - 1) {
+            // FIXME 画圆弧
             gc.strokeLine(bx, by, dx, dy)
           }
         }
     }
+  }
+
+  private def calCellPoints(cellSize: Int, center: Int, curCell: PolarCell, row: Int) = {
+    // 每个格子的夹角、内径、外径、顺时针逆时针的边的角度
+    val theta = 2 * Math.PI / _grid(row).length
+    val innerRadius = curCell.row * cellSize
+    val outerRadius = (curCell.row + 1) * cellSize
+    val ccwTheta = curCell.column * theta
+    val cwTheta = (curCell.column + 1) * theta
+    // 格子四个顶点的座标
+    val ax = center + (innerRadius * Math.cos(ccwTheta))
+    val ay = center + (innerRadius * Math.sin(ccwTheta))
+    val bx = center + (outerRadius * Math.cos(ccwTheta))
+    val by = center + (outerRadius * Math.sin(ccwTheta))
+    val cx = center + (innerRadius * Math.cos(cwTheta))
+    val cy = center + (innerRadius * Math.sin(cwTheta))
+    val dx = center + (outerRadius * Math.cos(cwTheta))
+    val dy = center + (outerRadius * Math.sin(cwTheta))
+    ((ax, ay), (bx, by), (cx, cy), (dx, dy))
   }
 }

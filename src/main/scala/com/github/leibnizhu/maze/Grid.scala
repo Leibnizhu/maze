@@ -125,6 +125,7 @@ class Grid(val rows: Int, val columns: Int) {
             val dark = (255 * intensity).toInt
             val bright = 160 + (95 * intensity).toInt
             gc.setFill(Color.rgb(dark, bright, dark))
+            // FIXME 四边形，对第0、1圈会填不满
             gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
           }
         }
@@ -138,7 +139,7 @@ class Grid(val rows: Int, val columns: Int) {
         // 距离显示
         distances match {
           case Some(distances) =>
-            // 文字居中，需要优化，按一个字5*5来计算，不一定准确
+            // 文字居中
             val distStr = distances.distance(cell).map(_.toString).getOrElse("")
             val font = new Font("System Regular", cellSize / 2)
             gc.setFill(Color.Black)

@@ -32,6 +32,7 @@ object App extends JFXApp3 {
           private val canvasWidth = CANVAS_WIDTH
           private val canvasHeight = CANVAS_HEIGHT
           private var canvasClick = 0
+
           private val rowNumInput: TextField = new TextField {
             promptText = "迷宫行数"
             prefWidth = 75
@@ -39,6 +40,28 @@ object App extends JFXApp3 {
           private val columnNumInput: TextField = new TextField {
             promptText = "迷宫列数"
             prefWidth = 75
+          }
+          private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
+            this.getSelectionModel.selectFirst()
+          }
+          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形")) {
+            this.getSelectionModel.selectFirst()
+
+            onAction = _ => {
+              if ("方形遮罩" == this.value.value) {
+                val fileChooser = new FileChooser() {
+                  title = "选择遮罩文件"
+                  initialDirectory = new File(System.getProperty("user.home"))
+                  extensionFilters.addAll(new FileChooser.ExtensionFilter("PNG Files", "*.png"))
+                }
+                val maskFile = fileChooser.showOpenDialog(stage)
+                if (maskFile != null) {
+                  mask = Mask(maskFile)
+                  rowNumInput.setText(mask.rows.toString)
+                  columnNumInput.setText(mask.columns.toString)
+                }
+              }
+            }
           }
 
           private def getRowColumn: (Int, Int) = {
@@ -48,60 +71,40 @@ object App extends JFXApp3 {
 
           private val centerCanvas = new Canvas(canvasWidth, canvasHeight) {
             onMouseClicked = event => {
-              val (rows, columns) = getRowColumn
-              val (x, y) = (event.getX, event.getY)
-              if (grid != null && x <= columns * cellSize && y <= rows * cellSize) {
-                val (row, column) = ((y / cellSize).toInt, (x / cellSize).toInt)
-                println(f"点击格子: ($row, $column)")
-                canvasClick += 1
-                canvasClick match
-                  case 1 =>
-                    // 第一次点击，选择了起点
-                    val cell = grid.cell(row, column)
-                    curDist = cell.distances()
-                    graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
-                    grid.paintCanvas(graphicsContext2D, cellSize, Some(curDist))
-                  case 2 =>
-                    // 第二次点击，选择了终点
-                    val goal = grid.cell(row, column)
-                    val path = curDist.pathTo(goal)
-                    graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
-                    grid.paintCanvas(graphicsContext2D, cellSize, Some(path))
-                    canvasClick = 0
-                    curDist = null
-                  case _ =>
-                    canvasClick = 0
-                    curDist = null
-                    graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
-                    grid.paintCanvas(graphicsContext2D, cellSize)
-              } else {
-                println(f"迷宫以外的点击座标: ($x, $y)")
+              if (shapeSelector.value.value == "方形" || shapeSelector.value.value == "方形遮罩") {
+                val (rows, columns) = getRowColumn
+                val (x, y) = (event.getX, event.getY)
+                if (grid != null && x <= columns * cellSize && y <= rows * cellSize) {
+                  val (row, column) = ((y / cellSize).toInt, (x / cellSize).toInt)
+                  println(f"点击格子: ($row, $column)")
+                  canvasClick += 1
+                  canvasClick match
+                    case 1 =>
+                      // 第一次点击，选择了起点
+                      val cell = grid.cell(row, column)
+                      curDist = cell.distances()
+                      graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
+                      grid.paintCanvas(graphicsContext2D, cellSize, Some(curDist))
+                    case 2 =>
+                      // 第二次点击，选择了终点
+                      val goal = grid.cell(row, column)
+                      val path = curDist.pathTo(goal)
+                      graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
+                      grid.paintCanvas(graphicsContext2D, cellSize, Some(path))
+                      canvasClick = 0
+                      curDist = null
+                    case _ =>
+                      canvasClick = 0
+                      curDist = null
+                      graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
+                      grid.paintCanvas(graphicsContext2D, cellSize)
+                } else {
+                  println(f"迷宫以外的点击座标: ($x, $y)")
+                }
               }
             }
           }
           top = new FlowPane() {
-            private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
-              this.getSelectionModel.selectFirst()
-            }
-            private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形")) {
-              this.getSelectionModel.selectFirst()
-
-              onAction = _ => {
-                if ("方形遮罩" == this.value.value) {
-                  val fileChooser = new FileChooser() {
-                    title = "选择遮罩文件"
-                    initialDirectory = new File(System.getProperty("user.home"))
-                    extensionFilters.addAll(new FileChooser.ExtensionFilter("PNG Files", "*.png"))
-                  }
-                  val maskFile = fileChooser.showOpenDialog(stage)
-                  if (maskFile != null) {
-                    mask = Mask(maskFile)
-                    rowNumInput.setText(mask.rows.toString)
-                    columnNumInput.setText(mask.columns.toString)
-                  }
-                }
-              }
-            }
             private val genMazeButton = new Button("随机生成迷宫") {
               onAction = _ => {
                 // 生成Binary Tree迷宫
