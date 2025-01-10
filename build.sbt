@@ -33,16 +33,19 @@ libraryDependencies ++= Seq(
 
 // 如果你使用的是 JavaFX 17，确保添加 VM 选项
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-feature")
-fork := true
+fork in run := true
+javaOptions += "-Xmx8G"
 
 lazy val app = (project in file("."))
   .settings(
-    assembly / mainClass := Some("io.github.leibnizhu.maze.App"),
+    assembly / mainClass := Some("com.github.leibnizhu.maze.App"),
     assembly / assemblyJarName := "Maze.jar",
   )
 
 assembly / assemblyMergeStrategy := {
   case x if x.endsWith("module-info.class") => MergeStrategy.discard
+  case x if x.endsWith(".json") => MergeStrategy.first
+  case "META-INF/substrate/config/resourcebundles" => MergeStrategy.first
   case x =>
     val oldStrategy = (assembly / assemblyMergeStrategy).value
     oldStrategy(x)
