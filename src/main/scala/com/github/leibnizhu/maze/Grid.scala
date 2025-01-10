@@ -63,7 +63,7 @@ class Grid(val rows: Int, val columns: Int) {
     else
       null
 
-  def size(): Int = rows * columns
+  def size(): Int = _grid.map(_.length).sum
 
   def centerCell(): Cell = cell(rows / 2, columns / 2)
 
