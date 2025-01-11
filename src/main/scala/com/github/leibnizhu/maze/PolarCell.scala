@@ -10,5 +10,5 @@ class PolarCell(override val row: Int, override val column: Int) extends Cell(ro
   // 向外的邻居，可能有多个
   var outward: List[PolarCell] = List()
 
-  override def neighbors(): List[Cell] = List(cw, ccw, inward).flatten ++ outward
+  override def neighbors(): List[PolarCell] = List(cw, ccw, inward).flatten ++ outward
 }

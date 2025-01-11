@@ -2,20 +2,16 @@ package com.github.leibnizhu.maze
 
 import scala.util.Random
 
-class Cell(val row: Int, val column: Int) {
-  var north: Option[Cell] = None
-  var south: Option[Cell] = None
-  var east: Option[Cell] = None
-  var west: Option[Cell] = None
+trait Cell(val row: Int, val column: Int) {
   private var _links: Map[Cell, Boolean] = Map.empty
 
   /**
-    * 链接另一个单元格
-    *
-    * @param another 另一个单元格
-    * @param bidi 是否双向链接
-    * @return 当前单元格
-    */
+   * 链接另一个单元格
+   *
+   * @param another 另一个单元格
+   * @param bidi    是否双向链接
+   * @return 当前单元格
+   */
   def link(another: Cell, bidi: Boolean = true): Cell = {
     _links = _links + (another -> true)
     if (bidi) {
@@ -25,12 +21,12 @@ class Cell(val row: Int, val column: Int) {
   }
 
   /**
-    * 取消链接另一个单元格
-    *
-    * @param another 另一个单元格
-    * @param bidi 是否双向取消链接
-    * @return 当前单元格
-    */
+   * 取消链接另一个单元格
+   *
+   * @param another 另一个单元格
+   * @param bidi    是否双向取消链接
+   * @return 当前单元格
+   */
   def unlink(another: Cell, bidi: Boolean = true): Cell = {
     _links = _links - another
     if (bidi) {
@@ -46,13 +42,13 @@ class Cell(val row: Int, val column: Int) {
   def linked(another: Cell): Boolean = _links.getOrElse(another, false)
 
   /**
-    * 获取所有相邻的单元格
-    *
-    * @return 相邻的单元格列表
-    */
-  def neighbors(): List[Cell] = List(north, south, east, west).flatten
+   * 获取所有相邻的单元格
+   *
+   * @return 相邻的单元格列表
+   */
+  def neighbors(): List[Cell]
 
-  def randomNeighbor():Cell = {
+  def randomNeighbor(): Cell = {
     val neighborList = neighbors()
     neighborList(Random.nextInt(neighborList.length))
   }

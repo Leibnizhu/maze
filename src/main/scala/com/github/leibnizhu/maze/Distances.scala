@@ -11,7 +11,7 @@ class Distances(root: Cell) {
   def distances(): Distances = {
     cells = cells + (root -> 0)
     // 广度优先搜索，frontier是当前正在探索的单元格列表
-    var frontier = List(root)
+    var frontier = List[Cell](root)
     while (frontier.nonEmpty) {
       // 下一次要探索的单元格列表
       var newFrontier = List[Cell]()

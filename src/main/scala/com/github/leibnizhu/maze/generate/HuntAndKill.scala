@@ -26,13 +26,15 @@ object HuntAndKill {
         // 邻居都访问过了，进入猎杀模式，首先curCell置空为了有机会退出循环
         curCell = null
         grid.eachCell() { cell =>
-          val visitedNeighbors = cell.neighbors().filter(c => c.links().nonEmpty)
-          val cellIsUnvisited = cell.links().isEmpty
-          if (cellIsUnvisited && visitedNeighbors.nonEmpty) {
-            // 当前格子未访问过，且有已访问过的邻居，则可以作为新的开始游走的格子
-            curCell = cell
-            val neighbor = visitedNeighbors(Random.nextInt(visitedNeighbors.length))
-            curCell.link(neighbor)
+          if (cell != null) {
+            val visitedNeighbors = cell.neighbors().filter(c => c.links().nonEmpty)
+            val cellIsUnvisited = cell.links().isEmpty
+            if (cellIsUnvisited && visitedNeighbors.nonEmpty) {
+              // 当前格子未访问过，且有已访问过的邻居，则可以作为新的开始游走的格子
+              curCell = cell
+              val neighbor = visitedNeighbors(Random.nextInt(visitedNeighbors.length))
+              curCell.link(neighbor)
+            }
           }
         }
       }

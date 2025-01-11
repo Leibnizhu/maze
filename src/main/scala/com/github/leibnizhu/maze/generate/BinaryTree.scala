@@ -1,6 +1,6 @@
 package com.github.leibnizhu.maze.generate
 
-import com.github.leibnizhu.maze.Grid
+import com.github.leibnizhu.maze.{Grid, MatrixCell}
 
 import scala.util.Random
 
@@ -15,12 +15,14 @@ object BinaryTree {
    * @return 构建后的迷宫
    */
   def on(grid: Grid): Grid = {
-    grid.eachCell() {  cell =>
-      // 每个单元格，选择其北或东的邻居出来，随机选择一个，进行链接
-      val neighbors = List(cell.east, cell.north).flatten
-      if (neighbors.nonEmpty) {
-        cell.link(neighbors(Random.nextInt(neighbors.size)))
-      }
+    grid.eachCell() {
+      case cell: MatrixCell =>
+        // 每个单元格，选择其北或东的邻居出来，随机选择一个，进行链接
+        val neighbors = List(cell.east, cell.north).flatten
+        if (neighbors.nonEmpty) {
+          cell.link(neighbors(Random.nextInt(neighbors.size)))
+        }
+      case _ =>
     }
     grid
   }

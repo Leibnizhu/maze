@@ -82,7 +82,7 @@ object App extends JFXApp3 {
                     case 1 =>
                       // 第一次点击，选择了起点
                       val cell = grid.cell(row, column)
-                      curDist = cell.distances()
+                      curDist = Distances(cell)
                       graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
                       grid.paintCanvas(graphicsContext2D, cellSize, Some(curDist))
                     case 2 =>
@@ -111,7 +111,7 @@ object App extends JFXApp3 {
                 val (rows, columns) = shapeSelector.value.value match {
                   case "方形" =>
                     val shape = getRowColumn
-                    grid = new Grid(shape._1, shape._2)
+                    grid = new MatrixGrid(shape._1, shape._2)
                     shape
                   case "方形遮罩" =>
                     grid = new MaskedGrid(mask)

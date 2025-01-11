@@ -2,14 +2,14 @@ package com.github.leibnizhu.maze
 
 import scala.util.Random
 
-class MaskedGrid(mask: Mask) extends Grid(mask.rows, mask.columns) {
+class MaskedGrid(mask: Mask) extends MatrixGrid(mask.rows, mask.columns) {
 
   override def initializeCells(): Array[Array[Cell]] = {
     val grid = Array.ofDim[Cell](rows, columns)
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         if (mask.isEnabled(row, column)) {
-          grid(row)(column) = new Cell(row, column)
+          grid(row)(column) = new MatrixCell(row, column)
         }
       }
     }
