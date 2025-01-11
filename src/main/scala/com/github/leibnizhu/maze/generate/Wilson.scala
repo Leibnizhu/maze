@@ -15,9 +15,10 @@ object Wilson {
   def on(grid: Grid): Grid = {
     // 记录所有单元格是否访问
     var unvisited = List[Cell]()
-    grid.eachCell() { cell => if (cell != null) {
-      unvisited = unvisited :+ cell
-    }
+    grid.eachCell() { cell =>
+      if (cell != null) {
+        unvisited = unvisited :+ cell
+      }
     }
     // 随机选择一个单元格设为已访问，这样才能保证有路径
     val first = unvisited(Random.nextInt(unvisited.length))

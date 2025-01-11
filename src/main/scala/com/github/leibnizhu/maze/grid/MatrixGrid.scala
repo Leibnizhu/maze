@@ -1,6 +1,7 @@
 package com.github.leibnizhu.maze.grid
 
 import com.github.leibnizhu.maze.Distances
+import com.github.leibnizhu.maze.grid.Grid.{MIN_CELL_SIZE, MAX_CELL_SIZE}
 import com.github.leibnizhu.maze.cell.{Cell, MatrixCell}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
@@ -18,7 +19,7 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
     grid
   }
 
-  override protected def linkCells(grid: Array[Array[Cell]]): Unit = {
+  override protected def linkCells(grid: Array[Array[Cell]]): Unit =
     for (row <- 0 until rows) {
       for (column <- 0 until columns) {
         val cell = grid(row)(column).asInstanceOf[MatrixCell]
@@ -38,7 +39,6 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
         }
       }
     }
-  }
 
 
   override def toString: String = {
@@ -63,6 +63,7 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
   }
 
   def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None): Unit = {
+    gc.translate(2, 2);
     // 按距离染色
     distances match {
       case Some(distances) =>
@@ -71,36 +72,28 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
           // 如果为空，则是遮罩里面的，无需渲染
           if (cell != null) {
             val (row, column) = (cell.row, cell.column)
-            val intensity = (maxDist - distances.distance(cell).getOrElse(0).toDouble) / maxDist
-            val dark = (255 * intensity).toInt
-            val bright = 160 + (95 * intensity).toInt
-            gc.setFill(Color.rgb(dark, bright, dark))
+            gc.setFill(distances.cellRgb(cell, maxDist))
             // FIXME 四边形，对第0、1圈会填不满
             gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
+
+            // 距离值显示,文字居中
+            val distStr = distances.distance(cell).map(_.toString).getOrElse("")
+            val font = new Font("System Regular", cellSize / 2)
+            gc.setFill(Color.Black)
+            gc.setFont(font)
+            val (textWidth, textHeight) = textSize(distStr, font)
+            val (leftX, topY) = (column * cellSize, row * cellSize)
+            gc.fillText(distStr, leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
           }
         }
       case None =>
     }
+    // 画边框
     eachCell() { cell =>
       if (cell != null) {
         val (row, column) = (cell.row, cell.column)
         val (topY, bottomY) = (row * cellSize, (row + 1) * cellSize)
         val (leftX, rightX) = (column * cellSize, (column + 1) * cellSize)
-        // 距离显示
-        distances match {
-          case Some(distances) =>
-            // 文字居中
-            val distStr = distances.distance(cell).map(_.toString).getOrElse("")
-            val font = new Font("System Regular", cellSize / 2)
-            gc.setFill(Color.Black)
-            gc.setFont(font)
-            val textNode = new Text(distStr)
-            textNode.setFont(font)
-            val textWidth = textNode.getLayoutBounds.getWidth
-            val textHeight = textNode.getLayoutBounds.getHeight
-            gc.fillText(distStr, leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
-          case None =>
-        }
         gc.stroke = Color.Black
         gc.setLineWidth(2)
         // 每个格子如果没有连着东边，则画东边界
@@ -121,5 +114,11 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
         }
       }
     }
+    gc.translate(-2, -2);
+  }
+
+  override def cellSize(canvasWidth: Double, canvasHeight: Double): Int = {
+    val cellSize = Math.min(canvasHeight / rows, canvasWidth / columns).toInt
+    Math.min(Math.max(MIN_CELL_SIZE, cellSize), MAX_CELL_SIZE)
   }
 }

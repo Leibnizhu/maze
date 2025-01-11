@@ -1,7 +1,7 @@
 package com.github.leibnizhu.maze
 
 import com.github.leibnizhu.maze.generate.*
-import com.github.leibnizhu.maze.grid.{Grid, Mask, MaskedGrid, MatrixGrid, PolarGrid}
+import com.github.leibnizhu.maze.grid.*
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.canvas.{Canvas, GraphicsContext}
@@ -14,8 +14,6 @@ import java.io.File
 import scala.util.Try
 
 object App extends JFXApp3 {
-  private val MAX_CELL_SIZE = 30
-  private val MIN_CELL_SIZE = 10
   private val CANVAS_WIDTH = 800
   private val CANVAS_HEIGHT = 600
   private val DEFAULT_ROW_NUM = 10
@@ -29,7 +27,7 @@ object App extends JFXApp3 {
           private var grid: Grid = _
           private var mask: Mask = _
           private var curDist: Distances = _
-          private var cellSize = MAX_CELL_SIZE
+          private var cellSize = Grid.MAX_CELL_SIZE
           private val canvasWidth = CANVAS_WIDTH
           private val canvasHeight = CANVAS_HEIGHT
           private var canvasClick = 0
@@ -45,7 +43,7 @@ object App extends JFXApp3 {
           private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
             this.getSelectionModel.selectFirst()
           }
-          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形")) {
+          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形")) {
             this.getSelectionModel.selectFirst()
 
             onAction = _ => {
@@ -121,14 +119,12 @@ object App extends JFXApp3 {
                     val shape = getRowColumn
                     grid = new PolarGrid(shape._1)
                     shape
+                  case "六边形" =>
+                    val shape = getRowColumn
+                    grid = new HexGrid(shape._1, shape._2)
+                    shape
                 }
-                cellSize = shapeSelector.value.value match {
-                  case "方形" | "方形遮罩" =>
-                    calCellSize(centerCanvas.getHeight.toInt, centerCanvas.getWidth.toInt, rows, columns)
-                  case "圆形" =>
-                    val size = Math.min(centerCanvas.getHeight, centerCanvas.getWidth).toInt / 2 / rows
-                    Math.min(Math.max(MIN_CELL_SIZE, size), MAX_CELL_SIZE)
-                }
+                cellSize = grid.cellSize(centerCanvas.getWidth, centerCanvas.getHeight)
                 val algorithm = algorithmSelector.value.value
                 algorithm match {
                   case "二叉树算法" => BinaryTree.on(grid)
@@ -165,15 +161,6 @@ object App extends JFXApp3 {
                 }
               }
             }
-            /*private val maskButton = new Button("选择遮罩") {
-              onAction = _ => {
-              }
-            }
-            private val cleanMaskButton = new Button("清除遮罩") {
-              onAction = _ => {
-                mask = null
-              }
-            }*/
             hgap = 10
             children = List(
               rowNumInput,
@@ -190,9 +177,5 @@ object App extends JFXApp3 {
     }
   }
 
-  private def calCellSize(height: Int, width: Int, rows: Int, columns: Int): Int = {
-    val cellSize = Math.min(height / rows, width / columns).toInt
-    Math.min(Math.max(MIN_CELL_SIZE, cellSize), MAX_CELL_SIZE)
-  }
 }
 

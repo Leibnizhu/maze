@@ -1,6 +1,7 @@
 package com.github.leibnizhu.maze
 
 import com.github.leibnizhu.maze.cell.Cell
+import scalafx.scene.paint.Color
 
 class Distances(root: Cell) {
   private var cells: Map[Cell, Int] = Map()
@@ -33,10 +34,17 @@ class Distances(root: Cell) {
 
   def distance(another: Cell): Option[Int] = cells.get(another)
 
+  def cellRgb(cell: Cell, maxDist: Int = max()._2): Color = {
+    val intensity = (maxDist - distance(cell).getOrElse(0).toDouble) / maxDist
+    val dark = (255 * intensity).toInt
+    val bright = 160 + (95 * intensity).toInt
+    Color.rgb(dark, bright, dark)
+  }
+
   /**
    * 添加一个单元格到距离表中
    *
-   * @param cell 单元格
+   * @param cell     单元格
    * @param distance 距离
    * @return this
    */

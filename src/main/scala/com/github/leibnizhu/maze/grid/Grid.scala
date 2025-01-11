@@ -66,6 +66,17 @@ trait Grid(val rows: Int, val columns: Int) {
   }
 
   def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None): Unit
+
+  def textSize(text: String, font: Font): (Double, Double) = {
+    val textNode = new Text(text)
+    textNode.setFont(font)
+    (textNode.getLayoutBounds.getWidth, textNode.getLayoutBounds.getHeight)
+  }
+
+  def cellSize(canvasWidth: Double, canvasHeight: Double): Int
 }
 
-
+object Grid {
+  val MAX_CELL_SIZE = 30
+  val MIN_CELL_SIZE = 10
+}

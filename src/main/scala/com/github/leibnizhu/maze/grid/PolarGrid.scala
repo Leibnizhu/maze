@@ -1,6 +1,7 @@
 package com.github.leibnizhu.maze.grid
 
 import com.github.leibnizhu.maze.Distances
+import com.github.leibnizhu.maze.grid.Grid.{MIN_CELL_SIZE, MAX_CELL_SIZE}
 import com.github.leibnizhu.maze.cell.{Cell, PolarCell}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
@@ -68,6 +69,7 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
     val font = new Font("System Regular", cellSize / 2)
     val imgSize = 2 * rows * cellSize
     val center = imgSize / 2
+    gc.translate(2, 2);
     // 按距离染色
     distances match {
       case Some(distances) =>
@@ -75,53 +77,33 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
         eachCell() {
           case curCell: PolarCell =>
             val (row, column) = (curCell.row, curCell.column)
-            val intensity = (maxDist - distances.distance(curCell).getOrElse(0).toDouble) / maxDist
-            val dark = (255 * intensity).toInt
-            val bright = 160 + (95 * intensity).toInt
+            // 涂色
             val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
-            gc.setFill(Color.rgb(dark, bright, dark))
-            //            gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
+            gc.setFill(distances.cellRgb(curCell, maxDist))
+            // FIXME 第1圈的折线太明显
+            // gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
             gc.fillPolygon(List((ax, ay), (bx, by), (dx, dy), (cx, cy)))
+
+            // 距离值的文字，文字居中
+            val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+            gc.setFill(Color.Black)
+            gc.setFont(font)
+            val maxX = Array(ax, bx, cx, dx).max
+            val minX = Array(ax, bx, cx, dx).min
+            val maxY = Array(ay, by, cy, dy).max
+            val minY = Array(ay, by, cy, dy).min
+            val (textWidth, textHeight) = textSize(distStr, font)
+            gc.fillText(distStr, (minX + maxX) / 2 - textWidth / 2, (minY + maxY) / 2 + textHeight / 4)
         }
       case None =>
     }
+    // 画边
     eachCell() {
       case curCell: PolarCell =>
         // 中间不用处理
-        if (curCell.row == 0) {
-          distances match {
-            case Some(distances) =>
-              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
-              gc.setFill(Color.Black)
-              gc.setFont(font)
-              val textNode = new Text(distStr)
-              textNode.setFont(font)
-              val textWidth = textNode.getLayoutBounds.getWidth
-              val textHeight = textNode.getLayoutBounds.getHeight
-              gc.fillText(distStr, center - textWidth / 2, center + textHeight / 4)
-            case None =>
-          }
-        } else {
+        if (curCell.row != 0) {
           val (row, column) = (curCell.row, curCell.column)
           val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
-          // 距离显示
-          distances match {
-            case Some(distances) =>
-              // 文字居中
-              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
-              gc.setFill(Color.Black)
-              gc.setFont(font)
-              val textNode = new Text(distStr)
-              textNode.setFont(font)
-              val textWidth = textNode.getLayoutBounds.getWidth
-              val textHeight = textNode.getLayoutBounds.getHeight
-              val maxX = Array(ax, bx, cx, dx).max
-              val minX = Array(ax, bx, cx, dx).min
-              val maxY = Array(ay, by, cy, dy).max
-              val minY = Array(ay, by, cy, dy).min
-              gc.fillText(distStr, (minX + maxX) / 2 - textWidth / 2, (minY + maxY) / 2 + textHeight / 4)
-            case None =>
-          }
           gc.stroke = Color.Black
           gc.setLineWidth(2)
           // 由于是圆环，每个格子画向内（圆心）一格和顺时针方向的邻居边即可
@@ -139,6 +121,7 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
           }
         }
     }
+    gc.translate(-2, -2);
   }
 
   private def calCellPoints(cellSize: Int, center: Int, curCell: PolarCell, row: Int) = {
@@ -158,5 +141,10 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
     val dx = center + (outerRadius * Math.cos(cwTheta))
     val dy = center + (outerRadius * Math.sin(cwTheta))
     ((ax, ay), (bx, by), (cx, cy), (dx, dy))
+  }
+
+  override def cellSize(canvasWidth: Double, canvasHeight: Double): Int = {
+    val size = Math.min(canvasHeight, canvasWidth).toInt / 2 / rows
+    Math.min(Math.max(MIN_CELL_SIZE, size), MAX_CELL_SIZE)
   }
 }
