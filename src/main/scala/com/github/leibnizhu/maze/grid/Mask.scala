@@ -1,5 +1,6 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.grid
 
+import com.github.leibnizhu.maze.Mask
 
 import java.awt.image.BufferedImage
 import java.io.File

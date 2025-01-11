@@ -1,5 +1,7 @@
 package com.github.leibnizhu.maze
 
+import com.github.leibnizhu.maze.cell.Cell
+
 class Distances(root: Cell) {
   private var cells: Map[Cell, Int] = Map()
 

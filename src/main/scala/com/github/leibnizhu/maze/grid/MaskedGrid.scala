@@ -1,4 +1,7 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.grid
+
+import com.github.leibnizhu.maze.cell.{Cell, MatrixCell}
+import com.github.leibnizhu.maze.MatrixGrid
 
 import scala.util.Random
 

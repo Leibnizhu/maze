@@ -1,6 +1,7 @@
 package com.github.leibnizhu.maze.generate
 
-import com.github.leibnizhu.maze.{Cell, Grid}
+import com.github.leibnizhu.maze.cell.Cell
+import com.github.leibnizhu.maze.grid.Grid
 
 import scala.util.Random
 

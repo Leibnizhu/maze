@@ -1,6 +1,7 @@
 package com.github.leibnizhu.maze
 
 import com.github.leibnizhu.maze.generate.*
+import com.github.leibnizhu.maze.grid.{Grid, Mask, MaskedGrid, MatrixGrid, PolarGrid}
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.canvas.{Canvas, GraphicsContext}

@@ -1,4 +1,6 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.cell
+
+import com.github.leibnizhu.maze.Distances
 
 import scala.util.Random
 

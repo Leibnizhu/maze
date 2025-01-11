@@ -1,4 +1,4 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.cell
 
 class MatrixCell(override val row: Int, override val column: Int) extends Cell(row, column) {
   var north: Option[MatrixCell] = None

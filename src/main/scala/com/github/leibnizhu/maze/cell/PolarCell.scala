@@ -1,4 +1,4 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.cell
 
 class PolarCell(override val row: Int, override val column: Int) extends Cell(row, column) {
   // 顺时针方向的邻居

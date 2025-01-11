@@ -1,5 +1,7 @@
-package com.github.leibnizhu.maze
+package com.github.leibnizhu.maze.grid
 
+import com.github.leibnizhu.maze.Distances
+import com.github.leibnizhu.maze.cell.{Cell, MatrixCell}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import scalafx.scene.text.{Font, Text}
