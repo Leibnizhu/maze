@@ -43,7 +43,7 @@ object App extends JFXApp3 {
           private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
             this.getSelectionModel.selectFirst()
           }
-          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形","三角形")) {
+          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形","三角形", "经典马赛克")) {
             this.getSelectionModel.selectFirst()
 
             onAction = _ => {
@@ -127,6 +127,13 @@ object App extends JFXApp3 {
                     val shape = getRowColumn
                     grid = new TriangleGrid(shape._1, shape._2)
                     shape
+                  case "经典马赛克" =>
+                    val shape = getRowColumn
+                    // 保持长宽是奇数
+                    val rows = shape._1/2*2+1
+                    val columns = shape._2/2*2+1
+                    grid = new UpsilonGrid(rows, columns)
+                    (rows, columns)
                 }
                 cellSize = grid.cellSize(centerCanvas.getWidth, centerCanvas.getHeight)
                 val algorithm = algorithmSelector.value.value
