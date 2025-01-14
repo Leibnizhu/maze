@@ -1,6 +1,6 @@
 package com.github.leibnizhu.maze.cell
 
-class HexCell(override val row: Int, override val column: Int) extends Cell(row, column) {
+class HexCell(override val row: Int, override val column: Int) extends Cell {
   var north: Option[HexCell] = None
   var northEast: Option[HexCell] = None
   var northWest: Option[HexCell] = None
@@ -9,4 +9,6 @@ class HexCell(override val row: Int, override val column: Int) extends Cell(row,
   var southWest: Option[HexCell] = None
 
   override def neighbors(): List[HexCell] = List(north, northEast, northWest, south, southEast, southWest).flatten
+
+  override def isEdge: Boolean = List(north, northEast, northWest, south, southEast, southWest).exists(_.isEmpty)
 }

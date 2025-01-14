@@ -1,15 +1,16 @@
 package com.github.leibnizhu.maze.grid
 
 import com.github.leibnizhu.maze.Distances
-import com.github.leibnizhu.maze.grid.Grid.{MIN_CELL_SIZE, MAX_CELL_SIZE}
 import com.github.leibnizhu.maze.cell.{Cell, PolarCell}
+import com.github.leibnizhu.maze.grid.Grid.{MAX_CELL_SIZE, MIN_CELL_SIZE}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import scalafx.scene.text.{Font, Text}
 
 import scala.util.Random
 
-class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
+class PolarGrid(override val rows: Int) extends Grid {
+  override val columns: Int = 1
 
   override protected def initializeCells(): Array[Array[Cell]] = {
     val allRows = new Array[Array[Cell]](rows)
@@ -22,10 +23,10 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
       // 这一行的内径
       val radius = row.toDouble / rows
       // 内径周长
-      val circumferrence = 2 * Math.PI * radius
+      val perimeter = 2 * Math.PI * radius
       val prevCount = allRows(row - 1).length
       // 内径、或者说上一行，平均的单元格长度
-      val estimateCellWidth = circumferrence / prevCount
+      val estimateCellWidth = perimeter / prevCount
       // 上一行每一格长度，如果超过1.5倍的行高，则四舍五入就变成2以上，即需要拆分多个格子，因此用这个比例做拆分多个个格子的倍数
       val ratio = (estimateCellWidth / rowHeight).round.toInt
       val curCellCount = prevCount * ratio
@@ -64,39 +65,57 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
 
   override def centerCell(): Cell = cell(0, 0)
 
-  override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances]): Unit = {
+  override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances], playMode: Boolean = false): Unit = {
     // 整体直径和中心位置（x,y都是一个值）
-    val font = new Font("System Regular", cellSize / 2)
     val imgSize = 2 * rows * cellSize
     val center = imgSize / 2
     gc.translate(2, 2);
     // 按距离染色
-    distances match {
-      case Some(distances) =>
-        val maxDist = distances.max()._2
-        eachCell() {
-          case curCell: PolarCell =>
-            val (row, column) = (curCell.row, curCell.column)
-            // 涂色
-            val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
-            gc.setFill(distances.cellRgb(curCell, maxDist))
-            // FIXME 第1圈的折线太明显
-            // gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
-            gc.fillPolygon(List((ax, ay), (bx, by), (dx, dy), (cx, cy)))
+    if (!playMode) {
+      val font = new Font("System Regular", cellSize / 2)
+      distances match {
+        case Some(distances) =>
+          val maxDist = distances.max()._2
+          eachCell() {
+            case curCell: PolarCell =>
+              val (row, column) = (curCell.row, curCell.column)
+              // 涂色
+              val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
+              gc.setFill(distances.cellRgb(curCell, maxDist))
+              // FIXME 第1圈的折线太明显
+              // gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
+              gc.fillPolygon(List((ax, ay), (bx, by), (dx, dy), (cx, cy)))
 
-            // 距离值的文字，文字居中
-            val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
-            gc.setFill(Color.Black)
-            gc.setFont(font)
-            val maxX = Array(ax, bx, cx, dx).max
-            val minX = Array(ax, bx, cx, dx).min
-            val maxY = Array(ay, by, cy, dy).max
-            val minY = Array(ay, by, cy, dy).min
-            val (textWidth, textHeight) = textSize(distStr, font)
-            gc.fillText(distStr, (minX + maxX) / 2 - textWidth / 2, (minY + maxY) / 2 + textHeight / 4)
-        }
-      case None =>
+              // 距离值的文字，文字居中
+              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+              gc.setFill(Color.Black)
+              gc.setFont(font)
+              val maxX = Array(ax, bx, cx, dx).max
+              val minX = Array(ax, bx, cx, dx).min
+              val maxY = Array(ay, by, cy, dy).max
+              val minY = Array(ay, by, cy, dy).min
+              val (textWidth, textHeight) = textSize(distStr, font)
+              gc.fillText(distStr, (minX + maxX) / 2 - textWidth / 2, (minY + maxY) / 2 + textHeight / 4)
+          }
+        case None =>
+      }
+    } else {
+      val font = new Font("System Regular", cellSize)
+      gc.setFill(Color.Orange)
+      gc.setFont(font)
+      val (textWidth, textHeight) = textSize("⭐️", font)
+      val (entry, exit) = entryAndExit(distances.get)
+      Array(entry, exit).foreach(curCell => {
+        val (row, column) = (curCell.row, curCell.column)
+        val ((ax, ay), (bx, by), (cx, cy), (dx, dy)) = calCellPoints(cellSize, center, curCell, row)
+        val maxX = Array(ax, bx, cx, dx).max
+        val minX = Array(ax, bx, cx, dx).min
+        val maxY = Array(ay, by, cy, dy).max
+        val minY = Array(ay, by, cy, dy).min
+        gc.fillText("⭐️", (minX + maxX) / 2 - textWidth / 2, (minY + maxY) / 2 + textHeight / 4)
+      })
     }
+
     // 画边
     eachCell() {
       case curCell: PolarCell =>
@@ -124,7 +143,7 @@ class PolarGrid(override val rows: Int) extends Grid(rows, 1) {
     gc.translate(-2, -2);
   }
 
-  private def calCellPoints(cellSize: Int, center: Int, curCell: PolarCell, row: Int) = {
+  private def calCellPoints(cellSize: Int, center: Int, curCell: Cell, row: Int) = {
     // 每个格子的夹角、内径、外径、顺时针逆时针的边的角度
     val theta = 2 * Math.PI / _grid(row).length
     val innerRadius = curCell.row * cellSize

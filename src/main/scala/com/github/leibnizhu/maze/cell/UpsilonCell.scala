@@ -1,6 +1,6 @@
 package com.github.leibnizhu.maze.cell
 
-class UpsilonCell(override val row: Int, override val column: Int) extends Cell(row, column) {
+class UpsilonCell(override val row: Int, override val column: Int) extends Cell {
   var north: Option[UpsilonCell] = None
   var south: Option[UpsilonCell] = None
   var east: Option[UpsilonCell] = None
@@ -14,4 +14,9 @@ class UpsilonCell(override val row: Int, override val column: Int) extends Cell(
   override def neighbors(): List[UpsilonCell] = List(north, south, east, west, northWest, northEast, southWest, southEast).flatten
 
   def isOctagon(): Boolean = (row + column) % 2 == 0
+
+  override def isEdge: Boolean = if (isOctagon())
+    List(north, south, east, west, northWest, northEast, southWest, southEast).exists(_.isEmpty)
+  else
+    List(north, south, east, west).exists(_.isEmpty)
 }

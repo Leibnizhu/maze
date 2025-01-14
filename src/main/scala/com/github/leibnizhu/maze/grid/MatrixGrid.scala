@@ -1,13 +1,13 @@
 package com.github.leibnizhu.maze.grid
 
 import com.github.leibnizhu.maze.Distances
-import com.github.leibnizhu.maze.grid.Grid.{MIN_CELL_SIZE, MAX_CELL_SIZE}
 import com.github.leibnizhu.maze.cell.{Cell, MatrixCell}
+import com.github.leibnizhu.maze.grid.Grid.{MAX_CELL_SIZE, MIN_CELL_SIZE}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import scalafx.scene.text.{Font, Text}
 
-class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid(rows, columns) {
+class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid {
 
   override protected def initializeCells(): Array[Array[Cell]] = {
     val grid = Array.ofDim[Cell](rows, columns)
@@ -62,33 +62,47 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
     sb.toString()
   }
 
-  def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None): Unit = {
+  def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None, playMode: Boolean = false): Unit = {
     gc.translate(2, 2);
     // 按距离染色
-    distances match {
-      case Some(distances) =>
-        val maxDist = distances.max()._2
-        eachCell() { cell =>
-          // 如果为空，则是遮罩里面的，无需渲染
-          if (cell != null) {
-            val (row, column) = (cell.row, cell.column)
-            gc.setFill(distances.cellRgb(cell, maxDist))
-            // FIXME 四边形，对第0、1圈会填不满
-            gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
+    if (!playMode) {
+      val font = new Font("System Regular", cellSize / 2)
+      distances match {
+        case Some(distances) =>
+          val maxDist = distances.max()._2
+          eachCell() { cell =>
+            // 如果为空，则是遮罩里面的，无需渲染
+            if (cell != null) {
+              val (row, column) = (cell.row, cell.column)
+              gc.setFill(distances.cellRgb(cell, maxDist))
+              // FIXME 四边形，对第0、1圈会填不满
+              gc.fillRect(column * cellSize, row * cellSize, cellSize, cellSize)
 
-            // 距离值显示,文字居中
-            val distStr = distances.distance(cell).map(_.toString).getOrElse("")
-            val font = new Font("System Regular", cellSize / 2)
-            gc.setFill(Color.Black)
-            gc.setFont(font)
-            val (textWidth, textHeight) = textSize(distStr, font)
-            val (leftX, topY) = (column * cellSize, row * cellSize)
-            gc.fillText(distStr, leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
+              // 距离值显示,文字居中
+              val distStr = distances.distance(cell).map(_.toString).getOrElse("")
+              gc.setFill(Color.Black)
+              gc.setFont(font)
+              val (textWidth, textHeight) = textSize(distStr, font)
+              val (leftX, topY) = (column * cellSize, row * cellSize)
+              gc.fillText(distStr, leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
+            }
           }
-        }
-      case None =>
+        case None =>
+      }
+    } else {
+      val font = new Font("System Regular", cellSize)
+      gc.setFill(Color.Orange)
+      gc.setFont(font)
+      val (textWidth, textHeight) = textSize("⭐️", font)
+      val (entry, exit) = entryAndExit(distances.get)
+      Array(entry, exit).foreach(curCell => {
+        val (row, column) = (curCell.row, curCell.column)
+        val (leftX, topY) = (column * cellSize, row * cellSize)
+        gc.fillText("⭐️", leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
+      })
     }
     // 画边框
+
     eachCell() { cell =>
       if (cell != null) {
         val (row, column) = (cell.row, cell.column)

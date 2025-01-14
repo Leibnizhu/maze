@@ -3,8 +3,10 @@ package com.github.leibnizhu.maze
 import com.github.leibnizhu.maze.cell.Cell
 import scalafx.scene.paint.Color
 
+import scala.collection.immutable.ListMap
+
 class Distances(root: Cell) {
-  private var cells: Map[Cell, Int] = Map()
+  private var cells: ListMap[Cell, Int] = ListMap()
 
   /**
    * 计算从起点到所有单元格的距离
@@ -92,4 +94,12 @@ class Distances(root: Cell) {
     }
     (maxCell, maxDist)
   }
+
+  def entryAndExit(): (Option[Cell], Option[Cell]) = {
+    val cellList = cells.keys.toList
+    val entry = cellList.find(_.isEdge)
+    val exit = cellList.findLast(_.isEdge)
+    (entry, exit)
+  }
+
 }

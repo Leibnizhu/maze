@@ -7,7 +7,7 @@ import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 
-class UpsilonGrid(override val rows: Int, override val columns: Int) extends Grid(rows, columns) {
+class UpsilonGrid(override val rows: Int, override val columns: Int) extends Grid {
 
   override protected def initializeCells(): Array[Array[Cell]] = {
     val grid = Array.ofDim[Cell](rows, columns)
@@ -37,33 +37,46 @@ class UpsilonGrid(override val rows: Int, override val columns: Int) extends Gri
       }
     }
 
-  override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances]): Unit = {
-    val font = new Font("System Regular", cellSize / 2)
+  override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances], playMode: Boolean = false): Unit = {
     gc.translate(2, 2);
 
     // 按距离染色
-    distances match {
-      case Some(distances) =>
-        val maxDist = distances.max()._2
-        eachCell() {
-          case curCell: UpsilonCell =>
-            val (row, column) = (curCell.row, curCell.column)
-            gc.setFill(distances.cellRgb(curCell, maxDist))
-            val (xfw, xnw, xm, xne, xfe, yfn, ynn, ym, yns, yfs) = upsilonPointXy(cellSize, row, column, curCell.isOctagon())
-            if (curCell.isOctagon()) {
-              gc.fillPolygon(List((xfw, ynn), (xnw, yfn), (xne, yfn), (xfe, ynn), (xfe, yns), (xne, yfs), (xnw, yfs), (xfw, yns)))
-            } else {
-              gc.fillPolygon(List((xnw, ynn), (xne, ynn), (xne, yns), (xnw, yns)))
-            }
+    if (!playMode) {
+      val font = new Font("System Regular", cellSize / 2)
+      distances match {
+        case Some(distances) =>
+          val maxDist = distances.max()._2
+          eachCell() {
+            case curCell: UpsilonCell =>
+              val (row, column) = (curCell.row, curCell.column)
+              gc.setFill(distances.cellRgb(curCell, maxDist))
+              val (xfw, xnw, xm, xne, xfe, yfn, ynn, ym, yns, yfs) = upsilonPointXy(cellSize, row, column, curCell.isOctagon())
+              if (curCell.isOctagon()) {
+                gc.fillPolygon(List((xfw, ynn), (xnw, yfn), (xne, yfn), (xfe, ynn), (xfe, yns), (xne, yfs), (xnw, yfs), (xfw, yns)))
+              } else {
+                gc.fillPolygon(List((xnw, ynn), (xne, ynn), (xne, yns), (xnw, yns)))
+              }
 
-            // 距离值的文字，文字居中
-            val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
-            gc.setFill(Color.Black)
-            gc.setFont(font)
-            val (textWidth, textHeight) = textSize(distStr, font)
-            gc.fillText(distStr, xm - textWidth / 2, ym + textHeight / 4)
-        }
-      case None =>
+              // 距离值的文字，文字居中
+              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+              gc.setFill(Color.Black)
+              gc.setFont(font)
+              val (textWidth, textHeight) = textSize(distStr, font)
+              gc.fillText(distStr, xm - textWidth / 2, ym + textHeight / 4)
+          }
+        case None =>
+      }
+    } else {
+      val font = new Font("System Regular", cellSize)
+      gc.setFill(Color.Orange)
+      gc.setFont(font)
+      val (textWidth, textHeight) = textSize("⭐️", font)
+      val (entry, exit) = entryAndExit(distances.get)
+      Array(entry, exit).foreach(curCell => {
+        val (row, column) = (curCell.row, curCell.column)
+        val xys = upsilonPointXy(cellSize, row, column, curCell.asInstanceOf[UpsilonCell].isOctagon())
+        gc.fillText("⭐️", xys._3 - textWidth / 2, xys._8 + textHeight / 4)
+      })
     }
 
     // 画边
@@ -126,7 +139,7 @@ class UpsilonGrid(override val rows: Int, override val columns: Int) extends Gri
 
   override def cellSize(canvasWidth: Double, canvasHeight: Double): Int = {
     val sizeByHeight = canvasHeight / (Math.sqrt(2) + 1 + (rows - 1) * (1 + 1 / Math.sqrt(2)))
-    val sizeByWidth = canvasWidth/ (Math.sqrt(2) + 1 + (columns - 1) * (1 + 1 / Math.sqrt(2)))
+    val sizeByWidth = canvasWidth / (Math.sqrt(2) + 1 + (columns - 1) * (1 + 1 / Math.sqrt(2)))
     val cellSize = Math.min(sizeByHeight, sizeByWidth).toInt
     Math.min(Math.max(MIN_CELL_SIZE, cellSize), MAX_CELL_SIZE)
   }

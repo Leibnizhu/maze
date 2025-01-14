@@ -8,7 +8,9 @@ import scalafx.scene.text.{Font, Text}
 
 import scala.util.Random
 
-trait Grid(val rows: Int, val columns: Int) {
+trait Grid() {
+  val rows: Int
+  val columns: Int
 
   protected val _grid: Array[Array[Cell]] = initGrid()
 
@@ -29,6 +31,20 @@ trait Grid(val rows: Int, val columns: Int) {
     val row = Random.nextInt(rows)
     val column = Random.nextInt(columns)
     _grid(row)(column)
+  }
+
+  def randomEdge(): Cell = {
+    var cell: Cell = null
+    while {
+      cell = randomCell()
+      !cell.isEdge
+    } do ()
+    cell
+  }
+
+  def entryAndExit(path: Distances): (Cell, Cell) = {
+    val (entry, exit) = path.entryAndExit()
+    (entry.getOrElse(randomEdge()), exit.getOrElse(randomEdge()))
   }
 
   def cell(row: Int, column: Int, grid: Array[Array[Cell]] = _grid): Cell =
@@ -65,7 +81,7 @@ trait Grid(val rows: Int, val columns: Int) {
     }
   }
 
-  def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None): Unit
+  def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances] = None, playMode: Boolean = false): Unit
 
   def textSize(text: String, font: Font): (Double, Double) = {
     val textNode = new Text(text)
@@ -74,6 +90,16 @@ trait Grid(val rows: Int, val columns: Int) {
   }
 
   def cellSize(canvasWidth: Double, canvasHeight: Double): Int
+
+  def longestPath(): Distances = {
+    val start = randomCell()
+    val distances = start.distances()
+    val (newStart, maxDist) = distances.max()
+    val newDistances = newStart.distances()
+    val (goal, _) = newDistances.max()
+    val path = newDistances.pathTo(goal)
+    path
+  }
 }
 
 object Grid {

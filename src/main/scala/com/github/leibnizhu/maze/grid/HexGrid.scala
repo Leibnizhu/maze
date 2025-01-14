@@ -1,13 +1,13 @@
 package com.github.leibnizhu.maze.grid
 
 import com.github.leibnizhu.maze.Distances
-import com.github.leibnizhu.maze.cell.{Cell, HexCell}
-import com.github.leibnizhu.maze.grid.Grid.{MIN_CELL_SIZE, MAX_CELL_SIZE}
+import com.github.leibnizhu.maze.cell.{Cell, HexCell, UpsilonCell}
+import com.github.leibnizhu.maze.grid.Grid.{MAX_CELL_SIZE, MIN_CELL_SIZE}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 
-class HexGrid(override val rows: Int, override val columns: Int) extends Grid(rows, columns) {
+class HexGrid(override val rows: Int, override val columns: Int) extends Grid {
 
   override protected def initializeCells(): Array[Array[Cell]] = {
     val grid = Array.ofDim[Cell](rows, columns)
@@ -38,35 +38,48 @@ class HexGrid(override val rows: Int, override val columns: Int) extends Grid(ro
       }
     }
 
-  override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances]): Unit = {
+  override def paintCanvas(gc: GraphicsContext, cellSize: Int, distances: Option[Distances], playMode: Boolean = false): Unit = {
     // 1/4宽度
     val aSize = cellSize / 2.0
     // 1/2高度
     val bSize = cellSize * Math.sqrt(3) / 2.0
     val width = cellSize * 2
     val height = bSize * 2
-    val font = new Font("System Regular", cellSize * 3 / 5)
     gc.translate(2, 2);
 
     // 按距离染色
-    distances match {
-      case Some(distances) =>
-        val maxDist = distances.max()._2
-        eachCell() {
-          case curCell: HexCell =>
-            val (row, column) = (curCell.row, curCell.column)
-            gc.setFill(distances.cellRgb(curCell, maxDist))
-            val (xfw, xnw, xne, xfe, yn, ym, ys) = hexPointXy(cellSize, aSize, bSize, height, row, column)
-            gc.fillPolygon(List((xfw, ym), (xnw, yn), (xne, yn), (xfe, ym), (xne, ys), (xnw, ys)))
+    if (!playMode) {
+      val font = new Font("System Regular", cellSize * 3 / 5)
+      distances match {
+        case Some(distances) =>
+          val maxDist = distances.max()._2
+          eachCell() {
+            case curCell: HexCell =>
+              val (row, column) = (curCell.row, curCell.column)
+              gc.setFill(distances.cellRgb(curCell, maxDist))
+              val (xfw, xnw, xne, xfe, yn, ym, ys) = hexPointXy(cellSize, aSize, bSize, height, row, column)
+              gc.fillPolygon(List((xfw, ym), (xnw, yn), (xne, yn), (xfe, ym), (xne, ys), (xnw, ys)))
 
-            // 距离值的文字，文字居中
-            val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
-            gc.setFill(Color.Black)
-            gc.setFont(font)
-            val (textWidth, textHeight) = textSize(distStr, font)
-            gc.fillText(distStr, (xfw + xfe) / 2 - textWidth / 2, (yn + ys) / 2 + textHeight / 4)
-        }
-      case None =>
+              // 距离值的文字，文字居中
+              val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+              gc.setFill(Color.Black)
+              gc.setFont(font)
+              val (textWidth, textHeight) = textSize(distStr, font)
+              gc.fillText(distStr, (xfw + xfe) / 2 - textWidth / 2, (yn + ys) / 2 + textHeight / 4)
+          }
+        case None =>
+      }
+    } else {
+      val font = new Font("System Regular", cellSize)
+      gc.setFill(Color.Orange)
+      gc.setFont(font)
+      val (textWidth, textHeight) = textSize("⭐️", font)
+      val (entry, exit) = entryAndExit(distances.get)
+      Array(entry, exit).foreach(curCell => {
+        val (row, column) = (curCell.row, curCell.column)
+        val (xfw, xnw, xne, xfe, yn, ym, ys) = hexPointXy(cellSize, aSize, bSize, height, row, column)
+        gc.fillText("⭐️", (xfw + xfe) / 2 - textWidth / 2, (yn + ys) / 2 + textHeight / 4)
+      })
     }
 
     // 画边

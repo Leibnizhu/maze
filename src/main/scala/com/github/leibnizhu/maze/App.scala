@@ -43,7 +43,7 @@ object App extends JFXApp3 {
           private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
             this.getSelectionModel.selectFirst()
           }
-          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形","三角形", "经典马赛克")) {
+          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形", "三角形", "经典马赛克")) {
             this.getSelectionModel.selectFirst()
 
             onAction = _ => {
@@ -69,108 +69,122 @@ object App extends JFXApp3 {
           }
 
           private val centerCanvas = new Canvas(canvasWidth, canvasHeight) {
-            onMouseClicked = event => {
-              if (shapeSelector.value.value == "方形" || shapeSelector.value.value == "方形遮罩") {
-                val (rows, columns) = getRowColumn
-                val (x, y) = (event.getX, event.getY)
-                if (grid != null && x <= columns * cellSize && y <= rows * cellSize) {
-                  val (row, column) = ((y / cellSize).toInt, (x / cellSize).toInt)
-                  println(f"点击格子: ($row, $column)")
-                  canvasClick += 1
-                  canvasClick match
-                    case 1 =>
-                      // 第一次点击，选择了起点
-                      val cell = grid.cell(row, column)
-                      curDist = Distances(cell)
-                      graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
-                      grid.paintCanvas(graphicsContext2D, cellSize, Some(curDist))
-                    case 2 =>
-                      // 第二次点击，选择了终点
-                      val goal = grid.cell(row, column)
-                      val path = curDist.pathTo(goal)
-                      graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
-                      grid.paintCanvas(graphicsContext2D, cellSize, Some(path))
-                      canvasClick = 0
-                      curDist = null
-                    case _ =>
-                      canvasClick = 0
-                      curDist = null
-                      graphicsContext2D.clearRect(0, 0, canvasWidth, canvasHeight)
-                      grid.paintCanvas(graphicsContext2D, cellSize)
-                } else {
-                  println(f"迷宫以外的点击座标: ($x, $y)")
-                }
+            onMouseClicked = event => doCanvasClick(event.getX, event.getY, graphicsContext2D)
+          }
+
+          private def doCanvasClick(x: Double, y: Double, gc: GraphicsContext): Unit = {
+            if (shapeSelector.value.value == "方形" || shapeSelector.value.value == "方形遮罩") {
+              val (rows, columns) = getRowColumn
+              if (grid != null && x <= columns * cellSize && y <= rows * cellSize) {
+                val (row, column) = ((y / cellSize).toInt, (x / cellSize).toInt)
+                println(f"点击格子: ($row, $column)")
+                canvasClick += 1
+                canvasClick match
+                  case 1 =>
+                    // 第一次点击，选择了起点
+                    val cell = grid.cell(row, column)
+                    curDist = Distances(cell)
+                    gc.clearRect(0, 0, canvasWidth, canvasHeight)
+                    grid.paintCanvas(gc, cellSize, Some(curDist))
+                  case 2 =>
+                    // 第二次点击，选择了终点
+                    val goal = grid.cell(row, column)
+                    val path = curDist.pathTo(goal)
+                    gc.clearRect(0, 0, canvasWidth, canvasHeight)
+                    grid.paintCanvas(gc, cellSize, Some(path))
+                    canvasClick = 0
+                    curDist = null
+                  case _ =>
+                    canvasClick = 0
+                    curDist = null
+                    gc.clearRect(0, 0, canvasWidth, canvasHeight)
+                    grid.paintCanvas(gc, cellSize)
+              } else {
+                println(f"迷宫以外的点击座标: ($x, $y)")
               }
             }
           }
+
+          private def genMaze(): Unit = {
+            // 生成Binary Tree迷宫
+            val (rows, columns) = shapeSelector.value.value match {
+              case "方形" =>
+                val shape = getRowColumn
+                grid = new MatrixGrid(shape._1, shape._2)
+                shape
+              case "方形遮罩" =>
+                grid = new MaskedGrid(mask)
+                (mask.rows, mask.columns)
+              case "圆形" =>
+                val shape = getRowColumn
+                grid = new PolarGrid(shape._1)
+                shape
+              case "六边形" =>
+                val shape = getRowColumn
+                grid = new HexGrid(shape._1, shape._2)
+                shape
+              case "三角形" =>
+                val shape = getRowColumn
+                grid = new TriangleGrid(shape._1, shape._2)
+                shape
+              case "经典马赛克" =>
+                val shape = getRowColumn
+                // 保持长宽是奇数
+                val rows = shape._1 / 2 * 2 + 1
+                val columns = shape._2 / 2 * 2 + 1
+                grid = new UpsilonGrid(rows, columns)
+                (rows, columns)
+            }
+            cellSize = grid.cellSize(centerCanvas.getWidth, centerCanvas.getHeight)
+            val algorithm = algorithmSelector.value.value
+            algorithm match {
+              case "二叉树算法" => BinaryTree.on(grid)
+              case "Sidewinder算法" => Sidewinder.on(grid)
+              case "Aldous-Border算法" => AldousBorder.on(grid)
+              case "Wilson算法" => Wilson.on(grid)
+              case "猎杀算法" => HuntAndKill.on(grid)
+              case "递归回溯算法" => RecursiveBacktracker.on(grid)
+              case _ => println("未支持的算法")
+            }
+            // 将迷宫绘制到画布上
+            val gc = centerCanvas.graphicsContext2D
+            gc.clearRect(0, 0, canvasWidth, canvasHeight)
+            val middle = grid.centerCell()
+            grid.paintCanvas(gc, cellSize, Option(middle).map(_.distances()))
+            canvasClick = 0
+            curDist = null
+          }
+
+          private def genLongestPath(): Unit = {
+            if (grid != null) {
+              val path = grid.longestPath()
+              val gc = centerCanvas.graphicsContext2D
+              gc.clearRect(0, 0, canvasWidth, canvasHeight)
+              grid.paintCanvas(gc, cellSize, Some(path))
+              canvasClick = 0
+              curDist = null
+            }
+          }
+
+          private def genPlay(): Unit = {
+            genMaze()
+            val path = grid.longestPath()
+            val gc = centerCanvas.graphicsContext2D
+            gc.clearRect(0, 0, canvasWidth, canvasHeight)
+            grid.paintCanvas(gc, cellSize, distances = Some(path), playMode = true)
+            canvasClick = 0
+            curDist = null
+          }
+
           top = new FlowPane() {
             private val genMazeButton = new Button("随机生成迷宫") {
-              onAction = _ => {
-                // 生成Binary Tree迷宫
-                val (rows, columns) = shapeSelector.value.value match {
-                  case "方形" =>
-                    val shape = getRowColumn
-                    grid = new MatrixGrid(shape._1, shape._2)
-                    shape
-                  case "方形遮罩" =>
-                    grid = new MaskedGrid(mask)
-                    (mask.rows, mask.columns)
-                  case "圆形" =>
-                    val shape = getRowColumn
-                    grid = new PolarGrid(shape._1)
-                    shape
-                  case "六边形" =>
-                    val shape = getRowColumn
-                    grid = new HexGrid(shape._1, shape._2)
-                    shape
-                  case "三角形" =>
-                    val shape = getRowColumn
-                    grid = new TriangleGrid(shape._1, shape._2)
-                    shape
-                  case "经典马赛克" =>
-                    val shape = getRowColumn
-                    // 保持长宽是奇数
-                    val rows = shape._1/2*2+1
-                    val columns = shape._2/2*2+1
-                    grid = new UpsilonGrid(rows, columns)
-                    (rows, columns)
-                }
-                cellSize = grid.cellSize(centerCanvas.getWidth, centerCanvas.getHeight)
-                val algorithm = algorithmSelector.value.value
-                algorithm match {
-                  case "二叉树算法" => BinaryTree.on(grid)
-                  case "Sidewinder算法" => Sidewinder.on(grid)
-                  case "Aldous-Border算法" => AldousBorder.on(grid)
-                  case "Wilson算法" => Wilson.on(grid)
-                  case "猎杀算法" => HuntAndKill.on(grid)
-                  case "递归回溯算法" => RecursiveBacktracker.on(grid)
-                  case _ => println("未支持的算法")
-                }
-                // 将迷宫绘制到画布上
-                val gc: GraphicsContext = centerCanvas.graphicsContext2D
-                gc.clearRect(0, 0, canvasWidth, canvasHeight)
-                val middle = grid.centerCell()
-                grid.paintCanvas(gc, cellSize, Option(middle).map(_.distances()))
-                canvasClick = 0
-                curDist = null
-              }
+              onAction = _ => genMaze()
             }
             private val longestPath = new Button("最长路径") {
-              onAction = _ => {
-                if (grid != null) {
-                  val start = grid.randomCell()
-                  val distances = start.distances()
-                  val (newStart, maxDist) = distances.max()
-                  val newDistances = newStart.distances()
-                  val (goal, _) = newDistances.max()
-                  val path = newDistances.pathTo(goal)
-                  val gc: GraphicsContext = centerCanvas.graphicsContext2D
-                  gc.clearRect(0, 0, canvasWidth, canvasHeight)
-                  grid.paintCanvas(gc, cellSize, Some(path))
-                  canvasClick = 0
-                  curDist = null
-                }
-              }
+              onAction = _ => genLongestPath()
+            }
+            private val play = new Button("游玩模式") {
+              onAction = _ => genPlay()
             }
             hgap = 10
             children = List(
@@ -179,7 +193,8 @@ object App extends JFXApp3 {
               shapeSelector,
               algorithmSelector,
               genMazeButton,
-              longestPath
+              longestPath,
+              play,
             )
           }
           center = centerCanvas

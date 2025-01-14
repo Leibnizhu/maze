@@ -4,7 +4,11 @@ import com.github.leibnizhu.maze.Distances
 
 import scala.util.Random
 
-trait Cell(val row: Int, val column: Int) {
+trait Cell() {
+
+  val row: Int
+  val column: Int
+
   private var _links: Map[Cell, Boolean] = Map.empty
 
   /**
@@ -56,4 +60,6 @@ trait Cell(val row: Int, val column: Int) {
   }
 
   def distances(): Distances = Distances(this).distances()
+
+  def isEdge: Boolean
 }
