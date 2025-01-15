@@ -62,4 +62,6 @@ trait Cell() {
   def distances(): Distances = Distances(this).distances()
 
   def isEdge: Boolean
+
+  def isDeadEnd: Boolean = links().length == 1
 }

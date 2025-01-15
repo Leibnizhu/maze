@@ -135,7 +135,7 @@ object App extends JFXApp3 {
                 grid = new UpsilonGrid(rows, columns)
                 (rows, columns)
             }
-            cellSize = grid.cellSize(centerCanvas.getWidth, centerCanvas.getHeight)
+            cellSize = grid.cellSize(centerCanvas.getWidth - 2, centerCanvas.getHeight - 2)
             val algorithm = algorithmSelector.value.value
             algorithm match {
               case "二叉树算法" => BinaryTree.on(grid)
@@ -150,6 +150,7 @@ object App extends JFXApp3 {
             val gc = centerCanvas.graphicsContext2D
             gc.clearRect(0, 0, canvasWidth, canvasHeight)
             val middle = grid.centerCell()
+            grid.braid(0.3)
             grid.paintCanvas(gc, cellSize, Option(middle).map(_.distances()))
             canvasClick = 0
             curDist = null

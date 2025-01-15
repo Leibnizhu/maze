@@ -3,7 +3,6 @@ package com.github.leibnizhu.maze.grid
 import com.github.leibnizhu.maze.Distances
 import com.github.leibnizhu.maze.cell.Cell
 import scalafx.scene.canvas.GraphicsContext
-import scalafx.scene.paint.Color
 import scalafx.scene.text.{Font, Text}
 
 import scala.util.Random
@@ -99,6 +98,41 @@ trait Grid() {
     val (goal, _) = newDistances.max()
     val path = newDistances.pathTo(goal)
     path
+  }
+
+  /**
+   *
+   * @return 所有死角格子的列表
+   */
+  def deadends(): List[Cell] = {
+    var list = List[Cell]()
+    eachCell() { cell => {
+      if (cell.isDeadEnd) {
+        list = cell :: list
+      }
+    }
+    }
+    list
+  }
+
+  /**
+   * 编排迷宫
+   *
+   * @param p 剔除死角的比例，1=全剔除，0=不剔除
+   */
+  def braid(p: Double = 1.0): Unit = {
+    Random.shuffle(deadends()).foreach(cell => {
+      // 是死角（可能前面遍历其他死角已经连了当前死角）且满足剔除概率条件
+      if (cell.isDeadEnd && Random.nextDouble() <= p) {
+        // 未连接到当前格子的邻居
+        val neighbors = cell.neighbors().filter(c => !c.linked(cell))
+        // 优先连接也是死角的未连接邻居
+        val bestNeighbor = neighbors.filter(_.isDeadEnd)
+        val neighbor = if (bestNeighbor.isEmpty) neighbors(Random.nextInt(neighbors.length))
+        else bestNeighbor(Random.nextInt(bestNeighbor.length))
+        cell.link(neighbor)
+      }
+    })
   }
 }
 
