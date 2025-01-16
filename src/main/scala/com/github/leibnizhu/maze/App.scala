@@ -43,7 +43,7 @@ object App extends JFXApp3 {
           private val algorithmSelector = new ComboBox(List("递归回溯算法", "猎杀算法", "Wilson算法", "Aldous-Border算法", "Sidewinder算法", "二叉树算法")) {
             this.getSelectionModel.selectFirst()
           }
-          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形", "三角形", "经典马赛克")) {
+          private val shapeSelector = new ComboBox(List("方形", "方形遮罩", "圆形", "六边形", "三角形", "经典马赛克", "交织型")) {
             this.getSelectionModel.selectFirst()
 
             onAction = _ => {
@@ -134,6 +134,10 @@ object App extends JFXApp3 {
                 val columns = shape._2 / 2 * 2 + 1
                 grid = new UpsilonGrid(rows, columns)
                 (rows, columns)
+              case "交织型" =>
+                val shape = getRowColumn
+                grid = new WeaveGrid(shape._1, shape._2)
+                shape
             }
             cellSize = grid.cellSize(centerCanvas.getWidth - 2, centerCanvas.getHeight - 2)
             val algorithm = algorithmSelector.value.value

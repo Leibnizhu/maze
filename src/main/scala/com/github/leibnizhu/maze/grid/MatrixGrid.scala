@@ -101,8 +101,8 @@ class MatrixGrid(override val rows: Int, override val columns: Int) extends Grid
         gc.fillText("⭐️", leftX + cellSize / 2 - textWidth / 2, topY + cellSize / 2 + textHeight / 4)
       })
     }
-    // 画边框
 
+    // 画边框
     eachCell() { cell =>
       if (cell != null) {
         val (row, column) = (cell.row, cell.column)
