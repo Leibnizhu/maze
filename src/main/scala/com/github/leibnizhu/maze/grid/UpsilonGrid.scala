@@ -68,7 +68,7 @@ class UpsilonGrid(override val rows: Int, override val columns: Int) extends Gri
       }
     } else {
       val font = new Font("System Regular", cellSize)
-      gc.setFill(Color.Orange)
+      gc.setFill(Color.Red)
       gc.setFont(font)
       val (textWidth, textHeight) = textSize("⭐️", font)
       val (entry, exit) = entryAndExit(distances.get)

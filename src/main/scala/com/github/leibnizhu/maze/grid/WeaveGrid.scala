@@ -4,6 +4,7 @@ import com.github.leibnizhu.maze.Distances
 import com.github.leibnizhu.maze.cell.{Cell, OverCell, UnderCell}
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
+import scalafx.scene.text.Font
 
 class WeaveGrid(override val rows: Int, override val columns: Int) extends MatrixGrid(rows, columns) {
   private var underCells = List[UnderCell]()
@@ -53,7 +54,59 @@ class WeaveGrid(override val rows: Int, override val columns: Int) extends Matri
     val inset = cellSize.doubleValue / 10
     gc.translate(2, 2);
     // 按距离染色
+    if (!playMode) {
+      val font = new Font("System Regular", cellSize / 2)
+      distances match {
+        case Some(distances) =>
+          val maxDist = distances.max()._2
+          eachCell() {
+            // 底部无需渲染
+            case cell@(curCell: OverCell) =>
+              val (row, column) = (curCell.row, curCell.column)
+              val (x1, x2, x3, x4, y1, y2, y3, y4) = insetXy(row, column, cellSize, inset)
+              val isUnderCell = cell.isInstanceOf[UnderCell]
+              gc.setFill(distances.cellRgb(curCell, maxDist))
+              // 底部格子不要覆盖上面已经渲染的颜色和文字
+              if (!isUnderCell) {
+                gc.fillRect(x2, y2, x3 - x2, y3 - y2)
+              }
+              // 四边的通道渲染。底部格子只渲染这部分，如果不渲染，会出现白边
+              if curCell.linked(curCell.east) then {
+                gc.fillRect(x3, y2, x4 - x3, y3 - y2)
+              }
+              if curCell.linked(curCell.west) then {
+                gc.fillRect(x1, y2, x2 - x1, y3 - y2)
+              }
+              if curCell.linked(curCell.north) then {
+                gc.fillRect(x2, y1, x3 - x2, y2 - y1)
+              }
+              if curCell.linked(curCell.south) then {
+                gc.fillRect(x2, y3, x3 - x2, y4 - y3)
+              }
 
+              // 距离值显示,文字居中。底部格子不渲染，否则可能覆盖上面格子已渲染的文字
+              if (!isUnderCell) {
+                val distStr = distances.distance(curCell).map(_.toString).getOrElse("")
+                gc.setFill(Color.Black)
+                gc.setFont(font)
+                val (textWidth, textHeight) = textSize(distStr, font)
+                gc.fillText(distStr, (x1 + x4) / 2 - textWidth / 2, (y1 + y4) / 2 + textHeight / 4)
+              }
+          }
+        case None =>
+      }
+    } else {
+      val font = new Font("System Bold", cellSize)
+      gc.setFill(Color.Red)
+      gc.setFont(font)
+      val (textWidth, textHeight) = textSize("⭐️", font)
+      val (entry, exit) = entryAndExit(distances.get)
+      Array(entry, exit).foreach(curCell => {
+        val (row, column) = (curCell.row, curCell.column)
+        val (x1, x2, x3, x4, y1, y2, y3, y4) = insetXy(row, column, cellSize, inset)
+        gc.fillText("⭐️", (x1 + x4) / 2 - textWidth / 2, (y1 + y4) / 2 + textHeight / 4)
+      })
+    }
 
     // 画边框
     eachCell() {
